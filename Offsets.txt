@@ -1,0 +1,33 @@
+002b6070 - barrier
+001bb67 - Jobs
+
+Mii Data Structure (assuming some 8byte long modifier is before it (long)):
+0x9 - Is NPC?
+0xD - ???
+0x10 - Last damaged enemy/target?
+0x68 - Something that increments after skills being used
+0x6C - Current Status Ailment
+0x7C - Mii MP
+0x84 - HP or Alive?
+0x8A - Angry condition (1st attack, 2nd attack, cranky/moody)
+0xA0 - Skill used
+0xF8 - Job Info
+0x100 - Personality
+0x110 - Last used/Currently being used attack
+0x120 - Probably Atk Stat or some damage mod
+
+Battle Info Offsets - In relation to the current Actor:
+0x144 - Current Target
+0x158 - Curr Skill Idx
+0x160 - Skills Learned
+0x19C - Targets all
+0x1B5 - Has Weapon
+0x1BA - Has Snacks
+
+Enemy Info Offsets -
+Skill1 Check - (*(char *)(*(long *)(EnemyInfo + 0x48) + 0x17) == "\xHexOfSkill)
+
+
+
+
+(var & 1) == 0; checking if even (if false)
