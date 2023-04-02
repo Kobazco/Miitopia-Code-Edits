@@ -1,0 +1,26 @@
+Angry
+Laugh
+Terror
+Cry
+Excite
+Spite
+Anxious
+Vacancy
+Gleeful
+Cranky
+Sleep
+Nightmare
+Dance
+Puppet
+Aging
+Burn
+Eat
+Faceless
+Pharaoh
+Spider
+Stone
+Ice
+Blow
+OverSleep
+
+0 = Normal
