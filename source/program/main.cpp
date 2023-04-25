@@ -7,13 +7,198 @@
 #include "sead/container/seadBuffer.h"
 #include "sead/prim/seadSafeString.hpp"
 
+// New files for organization
+#include "defines.cpp"
+
 #define LOG(...)                                                    \
   {                                                                 \
       int length = snprintf(buffer, sizeof(buffer), __VA_ARGS__);   \
       svcOutputDebugString(buffer, length);                         \
   }
 
+/*
+An array for turning the enum into
+printable strings. Better than doing
+crazy long switch statements all the
+time I suppose.
+
+I hate that I have to have this as
+a static in this file, but oh well.
+*/
+
+static std::pair<SkillEnum, const char*> SkillEnumStrings[] = {
+    {SKILL_FIGHTER_DOUBLE, "SKILL_FIGHTER_DOUBLE"},
+    {SKILL_FIGHTER_TWICE, "SKILL_FIGHTER_TWICE"},
+    {SKILL_FIGHTER_SPIN, "SKILL_FIGHTER_SPIN"},
+    {SKILL_FIGHTER_GUARD, "SKILL_FIGHTER_GUARD"},
+    {SKILL_FIGHTER_EYE_SLASH, "SKILL_FIGHTER_EYE_SLASH"},
+    {SKILL_FIGHTER_SPIN_2, "SKILL_FIGHTER_SPIN_2"},
+    {SKILL_FIGHTER_REVIVE_SLAP, "SKILL_FIGHTER_REVIVE_SLAP"},
+    {SKILL_FIGHTER_SLAP, "SKILL_FIGHTER_SLAP"},
+    {SKILL_FIGHTER_09, "SKILL_FIGHTER_09"},
+    {SKILL_FIGHTER_10, "SKILL_FIGHTER_10"},
+    {SKILL_FIGHTER_11, "SKILL_FIGHTER_11"},
+    {SKILL_FIGHTER_12, "SKILL_FIGHTER_12"},
+    {SKILL_WIZARD_FIRE, "SKILL_WIZARD_FIRE"},
+    {SKILL_WIZARD_FIRE_2, "SKILL_WIZARD_FIRE_2"},
+    {SKILL_WIZARD_FLAME_TOWER, "SKILL_WIZARD_FLAME_TOWER"},
+    {SKILL_WIZARD_LIGHTNING, "SKILL_WIZARD_LIGHTNING"},
+    {SKILL_WIZARD_LIGHTNING_2, "SKILL_WIZARD_LIGHTNING_2"},
+    {SKILL_WIZARD_LIGHTNING_3, "SKILL_WIZARD_LIGHTNING_3"},
+    {SKILL_WIZARD_EXPLOSION, "SKILL_WIZARD_EXPLOSION"},
+    {SKILL_WIZARD_EXPLOSION_2, "SKILL_WIZARD_EXPLOSION_2"},
+    {SKILL_WIZARD_EXPLOSION_3, "SKILL_WIZARD_EXPLOSION_3"},
+    {SKILL_WIZARD_BARRIER, "SKILL_WIZARD_BARRIER"},
+    {SKILL_WIZARD_SLEEP, "SKILL_WIZARD_SLEEP"},
+    {SKILL_WIZARD_BIG_WEAPON, "SKILL_WIZARD_BIG_WEAPON"},
+    {SKILL_PRIEST_CURE, "SKILL_PRIEST_CURE"},
+    {SKILL_PRIEST_CURE_2, "SKILL_PRIEST_CURE_2"},
+    {SKILL_PRIEST_CURE_3, "SKILL_PRIEST_CURE_3"},
+    {SKILL_PRIEST_CURE_ALL, "SKILL_PRIEST_CURE_ALL"},
+    {SKILL_PRIEST_CURE_ALL_2, "SKILL_PRIEST_CURE_ALL_2"},
+    {SKILL_PRIEST_CALM, "SKILL_PRIEST_CALM"},
+    {SKILL_PRIEST_KARMA, "SKILL_PRIEST_KARMA"},
+    {SKILL_PRIEST_RESURRECT, "SKILL_PRIEST_RESURRECT"},
+    {SKILL_PRIEST_RESURRECT_2, "SKILL_PRIEST_RESURRECT_2"},
+    {SKILL_PRIEST_HOLY, "SKILL_PRIEST_HOLY"},
+    {SKILL_PRIEST_11, "SKILL_PRIEST_11"},
+    {SKILL_PRIEST_12, "SKILL_PRIEST_12"},
+    {SKILL_THIEF_DAGGER, "SKILL_THIEF_DAGGER"},
+    {SKILL_THIEF_DAGGER_2, "SKILL_THIEF_DAGGER_2"},
+    {SKILL_THIEF_ROCK, "SKILL_THIEF_ROCK"},
+    {SKILL_THIEF_TRAP, "SKILL_THIEF_TRAP"},
+    {SKILL_THIEF_LARGE_TRAP, "SKILL_THIEF_LARGE_TRAP"},
+    {SKILL_THIEF_CREEP, "SKILL_THIEF_CREEP"},
+    {SKILL_THIEF_STEAL_ITEM, "SKILL_THIEF_STEAL_ITEM"},
+    {SKILL_THIEF_HIGH_JUMP, "SKILL_THIEF_HIGH_JUMP"},
+    {SKILL_THIEF_09, "SKILL_THIEF_09"},
+    {SKILL_THIEF_10, "SKILL_THIEF_10"},
+    {SKILL_THIEF_11, "SKILL_THIEF_11"},
+    {SKILL_THIEF_12, "SKILL_THIEF_12"},
+    {SKILL_IDOL_ENCORE, "SKILL_IDOL_ENCORE"},
+    {SKILL_IDOL_FUN_SERVICE, "SKILL_IDOL_FUN_SERVICE"},
+    {SKILL_IDOL_LOVE_CALL, "SKILL_IDOL_LOVE_CALL"},
+    {SKILL_IDOL_CONCERT, "SKILL_IDOL_CONCERT"},
+    {SKILL_IDOL_HOWLING, "SKILL_IDOL_HOWLING"},
+    {SKILL_IDOL_HOWLING_2, "SKILL_IDOL_HOWLING_2"},
+    {SKILL_IDOL_DANCE, "SKILL_IDOL_DANCE"},
+    {SKILL_IDOL_ANGEL_SONG, "SKILL_IDOL_ANGEL_SONG"},
+    {SKILL_IDOL_LOVE_AND_PEACE, "SKILL_IDOL_LOVE_AND_PEACE"},
+    {SKILL_IDOL_10, "SKILL_IDOL_10"},
+    {SKILL_IDOL_11, "SKILL_IDOL_11"},
+    {SKILL_IDOL_12, "SKILL_IDOL_12"},
+    {SKILL_VAMPIRE_EAT, "SKILL_VAMPIRE_EAT"},
+    {SKILL_VAMPIRE_BAT_ROSE, "SKILL_VAMPIRE_BAT_ROSE"},
+    {SKILL_VAMPIRE_ZOMBIFY, "SKILL_VAMPIRE_ZOMBIFY"},
+    {SKILL_VAMPIRE_BREATH, "SKILL_VAMPIRE_BREATH"},
+    {SKILL_VAMPIRE_BREATH2, "SKILL_VAMPIRE_BREATH2"},
+    {SKILL_VAMPIRE_BREATH3, "SKILL_VAMPIRE_BREATH3"},
+    {SKILL_VAMPIRE_CURSE, "SKILL_VAMPIRE_CURSE"},
+    {SKILL_VAMPIRE_REVIVE, "SKILL_VAMPIRE_REVIVE"},
+    {SKILL_VAMPIRE_09, "SKILL_VAMPIRE_09"},
+    {SKILL_VAMPIRE_10, "SKILL_VAMPIRE_10"},
+    {SKILL_VAMPIRE_11, "SKILL_VAMPIRE_11"},
+    {SKILL_VAMPIRE_12, "SKILL_VAMPIRE_12"},
+    {SKILL_COOK_COOKING, "SKILL_COOK_COOKING"},
+    {SKILL_COOK_COOKING2, "SKILL_COOK_COOKING2"},
+    {SKILL_COOK_COOKING3, "SKILL_COOK_COOKING3"},
+    {SKILL_COOK_HEATING, "SKILL_COOK_HEATING"},
+    {SKILL_COOK_SPICY, "SKILL_COOK_SPICY"},
+    {SKILL_COOK_SPICY_ALL, "SKILL_COOK_SPICY_ALL"},
+    {SKILL_COOK_BANQUET, "SKILL_COOK_BANQUET"},
+    {SKILL_COOK_COOK_MONSTER, "SKILL_COOK_COOK_MONSTER"},
+    {SKILL_COOK_BAKED_BANANA, "SKILL_COOK_BAKED_BANANA"},
+    {SKILL_COOK_10, "SKILL_COOK_10"},
+    {SKILL_COOK_11, "SKILL_COOK_11"},
+    {SKILL_COOK_12, "SKILL_COOK_12"},
+    {SKILL_TANK_REPAIR, "SKILL_TANK_REPAIR"},
+    {SKILL_TANK_WILD_SHOT, "SKILL_TANK_WILD_SHOT"},
+    {SKILL_TANK_HUMAN_CANNON, "SKILL_TANK_HUMAN_CANNON"},
+    {SKILL_TANK_BEAM, "SKILL_TANK_BEAM"},
+    {SKILL_TANK_BEAM2, "SKILL_TANK_BEAM2"},
+    {SKILL_TANK_HEAT_SHOT, "SKILL_TANK_HEAT_SHOT"},
+    {SKILL_TANK_DEFENSE, "SKILL_TANK_DEFENSE"},
+    {SKILL_TANK_08, "SKILL_TANK_08"},
+    {SKILL_TANK_09, "SKILL_TANK_09"},
+    {SKILL_TANK_10, "SKILL_TANK_10"},
+    {SKILL_TANK_11, "SKILL_TANK_11"},
+    {SKILL_TANK_12, "SKILL_TANK_12"},
+    {SKILL_DEVIL_JOKE_FORK, "SKILL_DEVIL_JOKE_FORK"},
+    {SKILL_DEVIL_PUNISH_FORK, "SKILL_DEVIL_PUNISH_FORK"},
+    {SKILL_DEVIL_GRIND_FORK, "SKILL_DEVIL_GRIND_FORK"},
+    {SKILL_DEVIL_MAGIC_DRAIN, "SKILL_DEVIL_MAGIC_DRAIN"},
+    {SKILL_DEVIL_ENERGY_DRAIN, "SKILL_DEVIL_ENERGY_DRAIN"},
+    {SKILL_DEVIL_SEDUCE, "SKILL_DEVIL_SEDUCE"},
+    {SKILL_DEVIL_PICK_HIP, "SKILL_DEVIL_PICK_HIP"},
+    {SKILL_DEVIL_WHISPER, "SKILL_DEVIL_WHISPER"},
+    {SKILL_DEVIL_DEATH_WHISPER, "SKILL_DEVIL_DEATH_WHISPER"},
+    {SKILL_DEVIL_10, "SKILL_DEVIL_10"},
+    {SKILL_DEVIL_11, "SKILL_DEVIL_11"},
+    {SKILL_DEVIL_12, "SKILL_DEVIL_12"},
+    {SKILL_ROYALTY_WAVE, "SKILL_ROYALTY_WAVE"},
+    {SKILL_ROYALTY_DOUBLE_WAVE, "SKILL_ROYALTY_DOUBLE_WAVE"},
+    {SKILL_ROYALTY_WAVE_ALL, "SKILL_ROYALTY_WAVE_ALL"},
+    {SKILL_ROYALTY_TEATIME, "SKILL_ROYALTY_TEATIME"},
+    {SKILL_ROYALTY_COLOGNE, "SKILL_ROYALTY_COLOGNE"},
+    {SKILL_ROYALTY_DANCE, "SKILL_ROYALTY_DANCE"},
+    {SKILL_ROYALTY_ESCORT, "SKILL_ROYALTY_ESCORT"},
+    {SKILL_ROYALTY_BLIND, "SKILL_ROYALTY_BLIND"},
+    {SKILL_ROYALTY_09, "SKILL_ROYALTY_09"},
+    {SKILL_ROYALTY_10, "SKILL_ROYALTY_10"},
+    {SKILL_ROYALTY_11, "SKILL_ROYALTY_11"},
+    {SKILL_ROYALTY_12, "SKILL_ROYALTY_12"},
+    {SKILL_FLOWER_FLOWER, "SKILL_FLOWER_FLOWER"},
+    {SKILL_FLOWER_FLOWER2, "SKILL_FLOWER_FLOWER2"},
+    {SKILL_FLOWER_EARTH_ANGER, "SKILL_FLOWER_EARTH_ANGER"},
+    {SKILL_FLOWER_FLOWER_PARK, "SKILL_FLOWER_FLOWER_PARK"},
+    {SKILL_FLOWER_FLOWER_PARK2, "SKILL_FLOWER_FLOWER_PARK2"},
+    {SKILL_FLOWER_LIFE_DEW, "SKILL_FLOWER_LIFE_DEW"},
+    {SKILL_FLOWER_FAN, "SKILL_FLOWER_FAN"},
+    {SKILL_FLOWER_FAN_ALL, "SKILL_FLOWER_FAN_ALL"},
+    {SKILL_FLOWER_WHISTLE, "SKILL_FLOWER_WHISTLE"},
+    {SKILL_FLOWER_10, "SKILL_FLOWER_10"},
+    {SKILL_FLOWER_11, "SKILL_FLOWER_11"},
+    {SKILL_FLOWER_12, "SKILL_FLOWER_12"},
+    {SKILL_SCIENTIST_CURE_CODE, "SKILL_SCIENTIST_CURE_CODE"},
+    {SKILL_SCIENTIST_BUG_CRUSH, "SKILL_SCIENTIST_BUG_CRUSH"},
+    {SKILL_SCIENTIST_JET_FLASK, "SKILL_SCIENTIST_JET_FLASK"},
+    {SKILL_SCIENTIST_JET_FLASK2, "SKILL_SCIENTIST_JET_FLASK2"},
+    {SKILL_SCIENTIST_BLACK_HOLE, "SKILL_SCIENTIST_BLACK_HOLE"},
+    {SKILL_SCIENTIST_GUARD_MASK, "SKILL_SCIENTIST_GUARD_MASK"},
+    {SKILL_SCIENTIST_IGNITION, "SKILL_SCIENTIST_IGNITION"},
+    {SKILL_SCIENTIST_ABSORBENT, "SKILL_SCIENTIST_ABSORBENT"},
+    {SKILL_SCIENTIST_09, "SKILL_SCIENTIST_09"},
+    {SKILL_SCIENTIST_10, "SKILL_SCIENTIST_10"},
+    {SKILL_SCIENTIST_11, "SKILL_SCIENTIST_11"},
+    {SKILL_SCIENTIST_12, "SKILL_SCIENTIST_12"},
+    {SKILL_CAT_PUNCH, "SKILL_CAT_PUNCH"},
+    {SKILL_CAT_DOUBLE_SCRATCH, "SKILL_CAT_DOUBLE_SCRATCH"},
+    {SKILL_CAT_SCRATCH_ALL, "SKILL_CAT_SCRATCH_ALL"},
+    {SKILL_CAT_LICK, "SKILL_CAT_LICK"},
+    {SKILL_CAT_POLISH_NAIL, "SKILL_CAT_POLISH_NAIL"},
+    {SKILL_CAT_FRISK, "SKILL_CAT_FRISK"},
+    {SKILL_CAT_STEAL_DISH, "SKILL_CAT_STEAL_DISH"},
+    {SKILL_CAT_GROOM, "SKILL_CAT_GROOM"},
+    {SKILL_CAT_09, "SKILL_CAT_09"},
+    {SKILL_CAT_10, "SKILL_CAT_10"},
+    {SKILL_CAT_11, "SKILL_CAT_11"},
+    {SKILL_CAT_12, "SKILL_CAT_12"},
+    {SKILL_ELF_DANCE_ARROW, "SKILL_ELF_DANCE_ARROW"},
+    {SKILL_ELF_MAGIC_ARROW, "SKILL_ELF_MAGIC_ARROW"},
+    {SKILL_ELF_ARROW_RAIN, "SKILL_ELF_ARROW_RAIN"},
+    {SKILL_ELF_FOREST_GRACE, "SKILL_ELF_FOREST_GRACE"},
+    {SKILL_ELF_PRAYER, "SKILL_ELF_PRAYER"},
+    {SKILL_ELF_CURE_MELODY, "SKILL_ELF_CURE_MELODY"},
+    {SKILL_ELF_GUARD_ARROW, "SKILL_ELF_GUARD_ARROW"},
+    {SKILL_ELF_08, "SKILL_ELF_08"},
+    {SKILL_ELF_09, "SKILL_ELF_09"},
+    {SKILL_ELF_10, "SKILL_ELF_10"},
+    {SKILL_ELF_11, "SKILL_ELF_11"},
+    {SKILL_ELF_12, "SKILL_ELF_12"},
+};
+
 int last_job = 0;
+int EventNum = 0;
 
 HOOK_DEFINE_TRAMPOLINE(ELinkCreate) {
 
@@ -221,42 +406,6 @@ HOOK_DEFINE_TRAMPOLINE(RockyPersonalCheck) {
     }
 };*/
 
-struct dmgclass {
-    long long AtkUsed;      //0x00 - The "attack" used. Is different, and consistent, based on the atk/skill used
-                        //      24 - Pincer (Back), Fire
-                        //      36 - Mega Cure x2
-                        //      39 - Explosion
-                        //      50 - Demonic Whisper
-                        //      59 - Unstable Formula
-                        //      63 - Enemy Basic Atk
-                        //      71 - Pincer (Front), Super Distracted Basic Atk
-                        //      72 - Basic Atk
-                        //      75 - Double Scratch
-                        //      79 x3 - Lend a Hand?, Mega Cure x1,3
-                        //      89 - Cure.exe
-                        //      104 - Punishing Pitchfork
-                        //      109 - Glitch
-    float FinalDmgMod;  //0x08 - The final damage modifier applied to the damage
-    long field_C;       //0x0C - Always 0
-    float field_14;     //0x14 - Always 1.0
-    float BaseMod;      //0x18 - Honestly dunno, end result is always 0.0
-    char field_1C;      //0x1C - This is a byte, output is wrong atm
-    bool SomeBool;      //0x1D - Constructed as true if the skill is magic based, false if not. 
-                        //       Always set to true in the end result. If this is false in the end result, damage will always be 255
-    char field_1E;      //0x1E - This is a byte, output is wrong atm
-    char field_1F;      //0x1F - This is a byte, output is wrong atm
-    short field_20;     //0x20 - Mostly consistent, some overlap/change
-                        //      -1 - ???
-                        //      0 - Default
-                        //      3 - Lend a Hand (Pitch In)
-                        //      16 - Slack Off, Spicy Feast, Lend a Hand, Pincer pt 1, Deominc Whisper, Punishing Pitchfork
-                        //      20 - Show Off
-                        //      23 - Lend a Hand
-                        //      48 - Pincer pt 3
-                        //      71 - Pincer pt 2
-    short field_22;     //0x22 - Always output as 0 or -1
-};
-
 HOOK_DEFINE_TRAMPOLINE(DmgConstructor1) {
     static void Callback(float dmgMod, float arg1, dmgclass *arg2, int arg3, bool IsMagic, short arg5, short arg6) {
 
@@ -366,14 +515,22 @@ static bool SkillNewStart(intptr_t MiiInfo, intptr_t MiiTgtInfo) {
 };
 
 HOOK_DEFINE_TRAMPOLINE(HealingSkills) {
-    static bool Callback(uintptr_t MiiInfo, short skillIdx, uintptr_t param3, uintptr_t MiiTgtInfo) {
+    static bool Callback(uintptr_t MiiInfo, SkillEnum skillIdx, uintptr_t param3, uintptr_t MiiTgtInfo) {
         
         char buffer[500];
         LOG("HealingSkills Entered");
-        LOG("Curr Skill: %d", skillIdx);
+
+        for (auto& skill : SkillEnumStrings) {
+            if (skill.first == skillIdx) {
+                LOG("CurrSkill: %s", skill.second)
+                break;
+            }
+        }
+
+        //LOG("Curr Skill: %s", skillEnumToString[static_cast<int>(skillIdx)]);
 
         switch(skillIdx) {
-            case 0x8C:
+            case SkillEnum::SKILL_SCIENTIST_09:
                 /*Scientist09_*/
                 LOG("Scientist09_");
                 //return false;
@@ -412,7 +569,7 @@ HOOK_DEFINE_TRAMPOLINE(SkillDisabler) {
         LOG("SkillStatus: %d", SkillData[1]);
         //LOG("SkillData: %d", SomeVar);
 
-        if (SomeVar == 140) {
+        if (SomeVar == SkillEnum::SKILL_SCIENTIST_09) {
             SkillData[1] = 0;
             SomeVar = *SkillData;
         }
@@ -457,11 +614,11 @@ HOOK_DEFINE_TRAMPOLINE(SkillDisabler) {
 };
 
 HOOK_DEFINE_TRAMPOLINE(DoesSkillTgtAlly_Hook) {
-    static bool Callback(uintptr_t BattleInfo, int SkillIdx) {
+    static bool Callback(uintptr_t BattleInfo, SkillEnum SkillIdx) {
+        char buffer[100];
         switch(SkillIdx){
-            case 0x85:
-                return false;
-            case 0x8c:
+            case SkillEnum::SKILL_SCIENTIST_09:
+                LOG("SKILL_SCIENTIST_09, targets ally.")
                 return true;
             default:
                 return Orig(BattleInfo, SkillIdx);
@@ -470,10 +627,8 @@ HOOK_DEFINE_TRAMPOLINE(DoesSkillTgtAlly_Hook) {
 };
 
 HOOK_DEFINE_TRAMPOLINE(DoesSkillTgtEnemy_Hook) {
-    static bool Callback(uintptr_t BattleInfo, int SkillIdx) {
+    static bool Callback(uintptr_t BattleInfo, SkillEnum SkillIdx) {
         switch(SkillIdx){
-            case 0x85:
-                return true;
             default:
                 return Orig(BattleInfo, SkillIdx);
         }
@@ -481,7 +636,7 @@ HOOK_DEFINE_TRAMPOLINE(DoesSkillTgtEnemy_Hook) {
 };
 
 HOOK_DEFINE_TRAMPOLINE(DoesSkillTgtAllEnemy_Hook) {
-    static bool Callback(uintptr_t BattleInfo, int SkillIdx) {
+    static bool Callback(uintptr_t BattleInfo, SkillEnum SkillIdx) {
         switch(SkillIdx){
             case 0x85:
                 return false;
@@ -491,7 +646,27 @@ HOOK_DEFINE_TRAMPOLINE(DoesSkillTgtAllEnemy_Hook) {
     }
 };
 
-HOOK_DEFINE_INLINE(InlineChecker) {
+HOOK_DEFINE_INLINE(EnemyDiml) {
+    static void Callback(exl::hook::InlineCtx* ctx) {
+        char buffer[100];
+        LOG("===EnemyDimlInfo===");
+        LOG("xml = %ld", ctx->X[8]);
+
+        ctx->W[8] = 0x200;
+        //ctx->X[8] = ctx->X[29] - 0xc0;
+        //ctx->X[9] = ctx->X[26] + 0x2A8;
+    }
+};
+
+HOOK_DEFINE_INLINE(EnemyAssetsSwitch) {
+    static void Callback(exl::hook::InlineCtx* ctx) {
+        char buffer[100];
+        LOG("===EnemyAssetsSwitch 0===");
+        ctx->X[1] = 0;
+    }
+};
+
+HOOK_DEFINE_INLINE(GetLastJob) {
     static void Callback(exl::hook::InlineCtx* ctx) {
         char buffer[100];
         LOG("===Inline===");
@@ -551,8 +726,51 @@ HOOK_DEFINE_TRAMPOLINE(BasicAttackState) {
     }
 };
 
+HOOK_DEFINE_TRAMPOLINE(EventActionSetup) {
+    static void Callback(uintptr_t param1) {
+        char buffer[100];
+
+        // Event # tracking
+        EventNum += 1;
+        LOG("Event#: %d", EventNum);
+
+        return Orig(param1);
+    }
+};
+
+HOOK_DEFINE_TRAMPOLINE(EventActionBool) {
+    static bool Callback(uintptr_t param1, uintptr_t param2, uint16_t param3) {
+        char buffer[100];
+        bool value = Orig(param1, param2, param3);
+        LOG("Event#: %d bool: %s", EventNum, value ? "true" : "false");
+
+        return value;
+    }
+};
+
+HOOK_DEFINE_TRAMPOLINE(SetVisibleHPMP) {
+    static void Callback(long *param1, long param2, long ****param3) {
+        char buffer[100];
+        LOG("SetVisibleHPMP Accessed (Event#: %d)", EventNum);
+        LOG("Param1: %ld", *param1); // Map Event: 150213912 // Non map: 150213912
+        LOG("Param2: %ld", param2); // Map Event: 75345443312 // Non map: 75345442592
+        LOG("Param3: %ld", ****param3); // Map Event: 71675650792 // Non Map: 75345442320
+        
+        return Orig(param1, param2, param3);
+    }
+};
+
+HOOK_DEFINE_INLINE(VisibleHPMPInline) {
+    static void Callback(exl::hook::InlineCtx* ctx) {
+        char buffer[100];
+        ctx->X[22] = 71562689040;
+        ctx->X[21] = *(long *)(ctx->X[22] + 0x388);
+        LOG("lVar5: %ld", ctx->X[21]);
+        LOG("lVar6: %ld", ctx->X[22]);
+    }
+};
+
 extern "C" void exl_main(void* x0, void* x1) {
-    //envSetOwnProcessHandle(exl::util::proc_handle::Get());
     exl::hook::Initialize();
 
     namespace patch = exl::patch;
@@ -576,8 +794,14 @@ extern "C" void exl_main(void* x0, void* x1) {
     DoesSkillTgtAlly_Hook::InstallAtOffset(0x00278500);
     DoesSkillTgtEnemy_Hook::InstallAtOffset(0x00278430);
     DoesSkillTgtAllEnemy_Hook::InstallAtOffset(0x00278550);
-    InlineChecker::InstallAtOffset(0x00288f20);
+    GetLastJob::InstallAtOffset(0x00288f20);
     BasicAttackState::InstallAtOffset(0x0028ca10);
+    //EnemyDiml::InstallAtOffset(0x004599d0);
+    //EnemyAssetsSwitch::InstallAtOffset(0x00200bd8);
+    EventActionSetup::InstallAtOffset(0x00941920);
+    SetVisibleHPMP::InstallAtOffset(0x008efa20);
+    EventActionBool::InstallAtOffset(0x00944ff0);
+    VisibleHPMPInline::InstallAtOffset(0x008efacc);
 }
 
 extern "C" NORETURN void exl_exception_entry() {

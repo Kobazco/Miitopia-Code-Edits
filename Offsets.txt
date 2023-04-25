@@ -2,9 +2,11 @@
 001bb67 - Jobs
 
 Mii Data Structure (assuming some 8byte long modifier is before it (long)):
+0x3 - Current HP
 0x9 - Is NPC?
 0xD - ???
-0x10 - Last damaged enemy/target?
+0x24 - Max HP
+0x29 - Has control over Mii
 0x68 - Something that increments after skills being used
 0x6C - Current Status Ailment
 0x7C - Mii MP
