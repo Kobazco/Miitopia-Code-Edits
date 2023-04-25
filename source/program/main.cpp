@@ -8,7 +8,8 @@
 #include "sead/prim/seadSafeString.hpp"
 
 // New files for organization
-#include "defines.cpp"
+#include "enums.cpp"
+#include "mii_info.cpp"
 
 #define LOG(...)                                                    \
   {                                                                 \
@@ -197,7 +198,29 @@ static std::pair<SkillEnum, const char*> SkillEnumStrings[] = {
     {SKILL_ELF_12, "SKILL_ELF_12"},
 };
 
-int last_job = 0;
+/*
+Array for job enum to string for
+logging.
+*/
+static const char* jobEnumToString[] = {
+    "Fighter",
+    "Wizard",
+    "Priest",
+    "Thief",
+    "IdolM",
+    "IdolF",
+    "Vampire",
+    "Cook",
+    "Tank",
+    "Devil",
+    "Royalty",
+    "Flower",
+    "Scientist",
+    "Cat",
+    "Elf",
+};
+
+JobEnum last_job = JOB_FIGHTER;
 int EventNum = 0;
 
 HOOK_DEFINE_TRAMPOLINE(ELinkCreate) {
@@ -423,7 +446,7 @@ HOOK_DEFINE_TRAMPOLINE(DmgConstructor1) {
         LOG("Dmg set to 1 for testing");
 
         //LOG("========DMGCLASS========");
-        //LOG("AtkUsed 0x00: %d", arg2->AtkUsed);
+        //LOG("AtkKind 0x00: %d", arg2->AtkKind);
         //LOG("field_2 0x02: %d", arg2->field_2);
         //LOG("field_4 0x04: %d", arg2->field_4);
         //LOG("Final Dmg Mod 0x08: %f" , arg2->FinalDmgMod);
@@ -452,8 +475,8 @@ HOOK_DEFINE_TRAMPOLINE(BasicAtk) {
     }
 };
 
-static bool SkillNewStart(intptr_t MiiInfo, intptr_t MiiTgtInfo) {
-    bool PersonalityCheck;
+static bool SkillNewStart(miiInfo *MiiInfo, intptr_t MiiTgtInfo) {
+    /*bool PersonalityCheck;
     //long uVar1;
     //float *Side;
     //long uVar2;
@@ -510,12 +533,12 @@ static bool SkillNewStart(intptr_t MiiInfo, intptr_t MiiTgtInfo) {
             //SkillNew(MiiInfo, MiiTgtInfo, auStack_B8);
             return 1;
         }
-    }
+    }*/
     return 0;
 };
 
 HOOK_DEFINE_TRAMPOLINE(HealingSkills) {
-    static bool Callback(uintptr_t MiiInfo, SkillEnum skillIdx, uintptr_t param3, uintptr_t MiiTgtInfo) {
+    static bool Callback(miiInfo *MiiInfo, SkillEnum skillIdx, uintptr_t param3, uintptr_t MiiTgtInfo) {
         
         char buffer[500];
         LOG("HealingSkills Entered");
@@ -638,8 +661,6 @@ HOOK_DEFINE_TRAMPOLINE(DoesSkillTgtEnemy_Hook) {
 HOOK_DEFINE_TRAMPOLINE(DoesSkillTgtAllEnemy_Hook) {
     static bool Callback(uintptr_t BattleInfo, SkillEnum SkillIdx) {
         switch(SkillIdx){
-            case 0x85:
-                return false;
             default:
                 return Orig(BattleInfo, SkillIdx);
         }
@@ -673,33 +694,70 @@ HOOK_DEFINE_INLINE(GetLastJob) {
         /*for(int i = 0; i < 29; i++) {
             LOG("X%d: %lx", i, ctx->X[i]);
         }*/
-        last_job = ctx->X[8];
-        LOG("Stored job %d", last_job);
+        last_job = (JobEnum)ctx->X[8];
+        LOG("Stored job %s", jobEnumToString[static_cast<int>(last_job)]);
+    }
+};
+
+HOOK_DEFINE_TRAMPOLINE(PlayBattleState_Hook) {
+    static long * Callback(miiInfo *MiiInfo, char *BattleState, int32_t param3) {
+        long *plVar1;
+        char *BattleStateLocal;
+        //int local_18;
+
+        //local_18 = *(int *)(ulong)(uint)param3;
+        BattleStateLocal = BattleState;
+        plVar1 = BattleStateFinalPlayer(MiiInfo->field_2, MiiInfo->field_1, 1, (char *)&BattleStateLocal, false);
+
+        return plVar1;
     }
 };
 
 HOOK_DEFINE_TRAMPOLINE(BasicAttackState) {
-    static bool Callback(uintptr_t MiiInfo, uintptr_t TgtInfo, uintptr_t dmgstructInput, uintptr_t HelperInfo, uintptr_t param_5) {
+    static bool Callback(miiInfo *MiiInfo, uintptr_t TgtInfo, uintptr_t dmgstructInput, uintptr_t HelperInfo, uintptr_t param_5) {
         char buffer[500];
         //double uVar2;
         //long *plVar1;
-        long IsEnemyDead;
-        dmgclass dmg_struct;
-        long *puVar8;
+        //long IsEnemyDead;
+        //dmgclass dmg_struct;
+        //long *puVar8;
 
         LOG("===BasicAtkBState===");
-        if (last_job != 0) {
-            LOG("Job was stored as: %d", last_job); // 1 is Wizard(Mage)
+        LOG("===MiiInfoStruct===");
+
+        size_t structSize = sizeof(miiInfo);
+        char* structBytes = (char*)MiiInfo;
+
+        for (size_t i = 0; i < structSize; i++) {
+            LOG("byte %ld: %02X", i, structBytes[i]);
         }
+        
+        if (last_job >= 0 && last_job < 15) {
+            LOG("Job doing basic atk: %s", jobEnumToString[static_cast<int>(last_job)]);
+        }
+
+        // Priest basic attacks restore MP
+        if (last_job == JobEnum::JOB_PRIEST) {
+            LOG("Trying Priest new basic atk effect...");
+            /*int CurMP = MiiInfo->CurMP;
+            int MaxMP = MiiInfo->MaxMP;
+            int MPHeal = (MaxMP - CurMP) * 0.3;
+            MiiInfo->CurMP = MPHeal + CurMP;
+            
+            uintptr_t Var = SomeHealingFunc(1.0, (uintptr_t)MiiInfo, 1);
+
+            DoMPHeal((uintptr_t)MiiInfo, Var, -1 ,1);*/
+        }
+
         // Mage new basic attack states
-        if (last_job == 1){
+        /*if (last_job == JobEnum::JOB_WIZARD){
             LOG("Job is Wizard, do new basic attack");
 
             puVar8 = FUN_71002af540(MiiInfo,dmgstructInput);
             if (puVar8 == 0x0) {
-                dmg_struct.AtkUsed = 0x7100e0a12c;
+                dmg_struct.AtkKind = 0x7100e0a12c;
                 dmg_struct.FinalDmgMod = (float)(*(short *)((TgtInfo + 0x8) + 0x78));
-                puVar8 = BattleStateFinalPlayer(MiiInfo + 0x10, MiiInfo + 0x8 , 1, (long *)&dmg_struct, 0);
+                puVar8 = BattleStateFinalPlayer(MiiInfo->field_2, MiiInfo->field_1, 1, (long *)&dmg_struct, 0);
             }
             //plVar1 = (long *)FUN_71002ddec0(MiiInfo, 0xffffffff, 0);
             //uVar2 = SomeBStatePlayer3(MiiInfo, 0xf, 1);
@@ -718,11 +776,12 @@ HOOK_DEFINE_TRAMPOLINE(BasicAttackState) {
             //PostAttackStatusCheck(MiiInfo);
             return 1;
 
-        }
+        }*/
         // Otherwise, do things as normal
-        else {
+        /*else {
             return Orig(MiiInfo, TgtInfo, dmgstructInput, HelperInfo, param_5);
-        }
+        }*/
+        return Orig(MiiInfo, TgtInfo, dmgstructInput, HelperInfo, param_5);
     }
 };
 
@@ -798,10 +857,11 @@ extern "C" void exl_main(void* x0, void* x1) {
     BasicAttackState::InstallAtOffset(0x0028ca10);
     //EnemyDiml::InstallAtOffset(0x004599d0);
     //EnemyAssetsSwitch::InstallAtOffset(0x00200bd8);
-    EventActionSetup::InstallAtOffset(0x00941920);
-    SetVisibleHPMP::InstallAtOffset(0x008efa20);
-    EventActionBool::InstallAtOffset(0x00944ff0);
-    VisibleHPMPInline::InstallAtOffset(0x008efacc);
+    //EventActionSetup::InstallAtOffset(0x00941920);
+    //SetVisibleHPMP::InstallAtOffset(0x008efa20);
+    //EventActionBool::InstallAtOffset(0x00944ff0);
+    //VisibleHPMPInline::InstallAtOffset(0x008efacc);
+    PlayBattleState_Hook::InstallAtOffset(0x00270000);
 }
 
 extern "C" NORETURN void exl_exception_entry() {

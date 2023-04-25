@@ -20,7 +20,7 @@ All structures here. Help.
 
 // dmgclass/dmgconstructor
 struct dmgclass {
-    long long AtkUsed;  //0x00 - The "attack" used. Is different, and consistent, based on the atk/skill used
+    long long AtkKind;  //0x00 - The "attack" used. Is different, and consistent, based on the atk/skill used
                         // See enums for documentation
     float FinalDmgMod;  //0x08 - The final damage modifier applied to the damage
     long field_C;       //0x0C - Always 0
@@ -272,6 +272,24 @@ enum SkillEnum: u64 {
     SKILL_ELF_10= 165,
     SKILL_ELF_11= 166,
     SKILL_ELF_12= 167,
+};
+
+enum JobEnum: u64 {
+    JOB_FIGHTER = 0,
+    JOB_WIZARD = 1,
+    JOB_PRIEST = 2,
+    JOB_THIEF = 3,
+    JOB_IDOL_M = 4,
+    JOB_IDOL_F = 5,
+    JOB_VAMPIRE = 6,
+    JOB_COOK = 7,
+    JOB_TANK = 8,
+    JOB_DEVIL = 9,
+    JOB_ROYALTY = 10,
+    JOB_FLOWER = 11,
+    JOB_SCIENTIST = 12,
+    JOB_CAT = 13,
+    JOB_ELF = 14,
 };
 
 /*
