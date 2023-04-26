@@ -16,6 +16,10 @@
 /*
 This file will have all things related to the
 "MiiInfo" structure. This is going to get messy.
+
+Oh also, this is used for enemies as well. Needs
+further testing on what is similar between them
+though.
 */
 
 struct miiInfo {
