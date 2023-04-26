@@ -1,5 +1,5 @@
 # extendmii
-Code edits for Miitopia made by Kobazco, includes extendmii by Shadow
+Code edits for Miitopia 1.0.3 (Switch) made by Kobazco, includes extendmii by Shadow
 
 # Note
 This project is a work in progress, and research. I am not liable for stuff that happens.
