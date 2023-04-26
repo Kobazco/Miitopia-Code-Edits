@@ -1,8 +1,8 @@
-# exlaunch
-A framework for injecting C/C++ code into Nintendo Switch applications/applet/sysmodules.
+# extendmii
+Code edits for Miitopia made by Kobazco, includes extendmii by Shadow
 
 # Note
-This project is a work in progress. If you have issues, reach out to Shadów#1337 on Discord.
+This project is a work in progress, and research. I am not liable for stuff that happens.
 
 # Credit
 - Atmosphère: A great reference and guide.

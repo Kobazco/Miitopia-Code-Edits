@@ -909,12 +909,6 @@ HOOK_DEFINE_INLINE(VisibleHPMPInline) {
 
 HOOK_DEFINE_TRAMPOLINE(FPSTest) {
     static void Callback(uintptr_t param1, long param2, int param3) {
-        char buffer[100];
-        LOG("===Game FPS===");
-        LOG("param1: %ld", param1);
-        LOG("param2: %ld", param2);
-        LOG("param3: %d", param3);
-
         // Param 3:
         // 1 = 60fps
         // 2 = 30fps
@@ -930,10 +924,10 @@ extern "C" void exl_main(void* x0, void* x1) {
     namespace reg = armv8::reg;
     namespace inst = armv8::inst;
 
-    //ELinkCreate::InstallAtOffset(0x00B1DCE0);
-    //ELinkLookup::InstallAtOffset(0x00B1D590);
-    //ELinkInject::InstallAtOffset(0x00B1D7C0);
-    //ELinkBufferCtor::InstallAtOffset(0x00B1DBF0);
+    ELinkCreate::InstallAtOffset(0x00B1DCE0);
+    ELinkLookup::InstallAtOffset(0x00B1D590);
+    ELinkInject::InstallAtOffset(0x00B1D7C0);
+    ELinkBufferCtor::InstallAtOffset(0x00B1DBF0);
     PctlLoad::InstallAtOffset(0x006C7340);
     BattleState::InstallAtOffset(0x00270000);
     //IsFueding::InstallAtOffset(0x00273360);
@@ -957,7 +951,7 @@ extern "C" void exl_main(void* x0, void* x1) {
     GetDmgOrHealAmount::InstallAtOffset(0x0026a010);
     //HandleEnemyDamage_Hook::InstallAtOffset(0x0028b200);
     RockyBStateHandler::InstallAtOffset(0x002b2b50);
-    //FPSTest::InstallAtOffset(0x00c03c60);
+    FPSTest::InstallAtOffset(0x00c03c60);
 }
 
 extern "C" NORETURN void exl_exception_entry() {
