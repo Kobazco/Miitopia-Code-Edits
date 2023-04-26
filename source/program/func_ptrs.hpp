@@ -46,7 +46,7 @@ FUNC_PTR(0x002ddec0, FUN_71002ddec0, long(*)(uintptr_t, int, int));
 FUNC_PTR(0x0028B200, HandleEnemyDamage, long(*)(uintptr_t, uintptr_t, bool, bool, bool, bool));
 FUNC_PTR(0x002af540, FUN_71002af540, long*(*)(uintptr_t, uintptr_t));
 FUNC_PTR(0x00266230, BattleStateFinalPlayer, long*(*)(long int*, long int*, int, char *, bool));
-FUNC_PTR(0x00270d00, DoMPHeal, long *(*)(uintptr_t, long, int, ushort));
+FUNC_PTR(0x00270d00, DoMPHeal, void(*)(uintptr_t, long, int, ushort));
 FUNC_PTR(0x0026f370, SomeHealingFunc, uintptr_t(*)(float, uintptr_t, long));
 
 #undef FUNC_PTR

@@ -223,6 +223,10 @@ static const char* jobEnumToString[] = {
 JobEnum last_job = JOB_FIGHTER;
 int EventNum = 0;
 
+bool PriestMPAtk = false;
+bool PriestMPState = false;
+int PriestMPRestore = 0;
+
 HOOK_DEFINE_TRAMPOLINE(ELinkCreate) {
 
     static uintptr_t Callback(uintptr_t _this, const char* name) {
@@ -418,16 +422,26 @@ HOOK_DEFINE_TRAMPOLINE(ELinkBufferCtor) {
         Orig(_this, parent, heap, s_ELinkBins.size() + 1);
     }
 };
-/*
+
 HOOK_DEFINE_TRAMPOLINE(RockyPersonalCheck) {
-    static bool Callback(uintptr_t *MiiPtr, uintptr_t skillIdx) {
+    static bool Callback(miiInfo *MiiInfo, uintptr_t skillIdx) {
         
         char buffer[500];
         LOG("Stubborn Again! check for skill %ld.", skillIdx);
 
-        return true;
+        // If we got here while this is set, it
+        // means that the priest just did a basic
+        // attack on an enemy, so do custom stuff.
+        if (PriestMPState) {
+            LOG("Start Priest MP Heal");
+            PriestMPAtk = true;
+            DoMPHeal((uintptr_t)MiiInfo, 71554516732, (int)*(short *)(MiiInfo->field_1 + 0xf), 1);   // 71437483340
+            PriestMPState = false;
+        }
+
+        return Orig(MiiInfo, skillIdx);
     }
-};*/
+};
 
 HOOK_DEFINE_TRAMPOLINE(DmgConstructor1) {
     static void Callback(float dmgMod, float arg1, dmgclass *arg2, int arg3, bool IsMagic, short arg5, short arg6) {
@@ -699,17 +713,38 @@ HOOK_DEFINE_INLINE(GetLastJob) {
     }
 };
 
-HOOK_DEFINE_TRAMPOLINE(PlayBattleState_Hook) {
-    static long * Callback(miiInfo *MiiInfo, char *BattleState, int32_t param3) {
-        long *plVar1;
-        char *BattleStateLocal;
-        //int local_18;
+HOOK_DEFINE_TRAMPOLINE(GetDmgOrHealAmount) {
+    static int Callback(uintptr_t param_1) {
+        char buffer [100];
+        //LOG("===GetDmgOrHealAmount===");
+        //LOG("Input: %ld", param_1);
 
-        //local_18 = *(int *)(ulong)(uint)param3;
-        BattleStateLocal = BattleState;
-        plVar1 = BattleStateFinalPlayer(MiiInfo->field_2, MiiInfo->field_1, 1, (char *)&BattleStateLocal, false);
+        // If we are here through a Priest MP Basic Atk, do custom stuff
+        if (PriestMPAtk) {
+            // Make sure we unset this before leaving...
+            PriestMPAtk = false;
+            // Return our new heal amount
+            LOG("Return MP Heal: %d", PriestMPRestore);
+            return PriestMPRestore;
+        }
+        // This is what dictates the number in the UI. For some reason,
+        //  its seperate. Happens after my manual call of DoMPHeal.
+        if (param_1 == 71555737708) {
+            //LOG("Return MP Heal: %d", PriestMPRestore);
+            return PriestMPRestore;
+        }
 
-        return plVar1;
+        int ret = Orig(param_1);
+        //LOG("Output: %d", ret);
+        return ret;
+    }
+};
+
+HOOK_DEFINE_TRAMPOLINE(HandleEnemyDamage_Hook) {
+    static void Callback(miiInfo *MiiInfo, uintptr_t EnemyInfo, bool param3, bool param4, bool param5, bool param6) {
+        char buffer[500];
+        LOG("===HandleEnemydamage===")
+        return Orig(MiiInfo, EnemyInfo, param3, param4, param5, param6);
     }
 };
 
@@ -718,19 +753,19 @@ HOOK_DEFINE_TRAMPOLINE(BasicAttackState) {
         char buffer[500];
         //double uVar2;
         //long *plVar1;
-        //long IsEnemyDead;
+        long IsEnemyDead;
         //dmgclass dmg_struct;
         //long *puVar8;
 
         LOG("===BasicAtkBState===");
-        LOG("===MiiInfoStruct===");
+        //LOG("===MiiInfoStruct===");
 
-        size_t structSize = sizeof(miiInfo);
+        /*size_t structSize = sizeof(miiInfo);
         char* structBytes = (char*)MiiInfo;
 
         for (size_t i = 0; i < structSize; i++) {
             LOG("byte %ld: %02X", i, structBytes[i]);
-        }
+        }*/
         
         if (last_job >= 0 && last_job < 15) {
             LOG("Job doing basic atk: %s", jobEnumToString[static_cast<int>(last_job)]);
@@ -739,49 +774,49 @@ HOOK_DEFINE_TRAMPOLINE(BasicAttackState) {
         // Priest basic attacks restore MP
         if (last_job == JobEnum::JOB_PRIEST) {
             LOG("Trying Priest new basic atk effect...");
-            /*int CurMP = MiiInfo->CurMP;
-            int MaxMP = MiiInfo->MaxMP;
-            int MPHeal = (MaxMP - CurMP) * 0.3;
-            MiiInfo->CurMP = MPHeal + CurMP;
-            
-            uintptr_t Var = SomeHealingFunc(1.0, (uintptr_t)MiiInfo, 1);
 
-            DoMPHeal((uintptr_t)MiiInfo, Var, -1 ,1);*/
+            // Do and store math for MP to restore
+            int CurMP = MiiInfo->CurMP;
+            int MaxMP = MiiInfo->MaxMP;
+            float MPHeal = (MaxMP - CurMP) * 0.3;
+            PriestMPRestore = (int)MPHeal;
+            PriestMPState = true;
+
+            //DoMPHeal((uintptr_t)MiiInfo, 71554516732, (int)*(short *)(MiiInfo->field_1 + 0xf), 1);   // 71437483340
         }
 
         // Mage new basic attack states
-        /*if (last_job == JobEnum::JOB_WIZARD){
+        if (last_job == JobEnum::JOB_WIZARD){
             LOG("Job is Wizard, do new basic attack");
 
-            puVar8 = FUN_71002af540(MiiInfo,dmgstructInput);
+            /*puVar8 = FUN_71002af540((uintptr_t)MiiInfo,dmgstructInput);
             if (puVar8 == 0x0) {
                 dmg_struct.AtkKind = 0x7100e0a12c;
                 dmg_struct.FinalDmgMod = (float)(*(short *)((TgtInfo + 0x8) + 0x78));
                 puVar8 = BattleStateFinalPlayer(MiiInfo->field_2, MiiInfo->field_1, 1, (long *)&dmg_struct, 0);
-            }
+            }*/
             //plVar1 = (long *)FUN_71002ddec0(MiiInfo, 0xffffffff, 0);
+
             //uVar2 = SomeBStatePlayer3(MiiInfo, 0xf, 1);
             
             // BStates
-            SomeBStatePlayer2_0x55(MiiInfo);
-            PlayBattleState(MiiInfo, "SkillMagicStart", 1);
-            PlayBattleState(MiiInfo, "SkillFire", 1);
-            FUN_7100270630(MiiInfo, 0, 0);
+            SomeBStatePlayer2_0x55((uintptr_t)MiiInfo);
+            PlayBattleState((uintptr_t)MiiInfo, "SkillMagicStart", 1);
+            PlayBattleState((uintptr_t)MiiInfo, "SkillFire", 1);
+            FUN_7100270630((uintptr_t)MiiInfo, 0, 0);
 
             // Handle Enemy Damage
-            IsEnemyDead = HandleEnemyDamage(MiiInfo, TgtInfo, false, false, false, false);
+            IsEnemyDead = HandleEnemyDamage((uintptr_t)MiiInfo, TgtInfo, false, false, false, false);
             if (IsEnemyDead == 0) {
-                PlayBattleState(MiiInfo, "DefeatEnemySkillMagic", 1);
+                PlayBattleState((uintptr_t)MiiInfo, "DefeatEnemySkillMagic", 1);
             }
-            //PostAttackStatusCheck(MiiInfo);
+            PostAttackStatusCheck((uintptr_t)MiiInfo);
             return 1;
-
-        }*/
+        }
         // Otherwise, do things as normal
-        /*else {
+        else {
             return Orig(MiiInfo, TgtInfo, dmgstructInput, HelperInfo, param_5);
-        }*/
-        return Orig(MiiInfo, TgtInfo, dmgstructInput, HelperInfo, param_5);
+        }
     }
 };
 
@@ -845,7 +880,7 @@ extern "C" void exl_main(void* x0, void* x1) {
     //BattleState::InstallAtOffset(0x00270000);
     //IsFueding::InstallAtOffset(0x00273360);
     HealingSkills::InstallAtOffset(0x00291AC0);
-    //RockyPersonalCheck::InstallAtOffset(0x00279850);
+    RockyPersonalCheck::InstallAtOffset(0x00279850);
     DmgConstructor1::InstallAtOffset(0x00269D60);
     //BasicAtk::InstallAtOffset(0x002EA6A0);
     //SkillDisabler::InstallAtOffset(0x00235720);
@@ -861,7 +896,8 @@ extern "C" void exl_main(void* x0, void* x1) {
     //SetVisibleHPMP::InstallAtOffset(0x008efa20);
     //EventActionBool::InstallAtOffset(0x00944ff0);
     //VisibleHPMPInline::InstallAtOffset(0x008efacc);
-    PlayBattleState_Hook::InstallAtOffset(0x00270000);
+    GetDmgOrHealAmount::InstallAtOffset(0x0026a010);
+    //HandleEnemyDamage_Hook::InstallAtOffset(0x0028b200);
 }
 
 extern "C" NORETURN void exl_exception_entry() {

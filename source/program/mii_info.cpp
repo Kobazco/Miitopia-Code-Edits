@@ -62,7 +62,7 @@ struct miiInfo {
     char field_47;  //0x81 Padding
     short field_48; //0x82 Padding
     uint field_49;  //0x84
-    uint field_50;  //0x88
+    uint field_50;  //0x88 - Something to do with relationships
     char field_51;  //0x8C Padding
     char field_52;  //0x8D
 };
