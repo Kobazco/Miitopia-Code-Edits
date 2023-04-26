@@ -69,37 +69,6 @@ enum AttackKind: u64 {
 };
 
 /*
-Status Effects (MiiInfo->0x6C)
-*/
-enum StatusEffect: u64 {
-    STATUS_NORMAL = 0,
-    STATUS_ANGRY = 1,
-    STATUS_LAUGH = 2,
-    STATUS_TERROR = 3,
-    STATUS_CRY = 4,
-    STATUS_EXCITE = 5,
-    STATUS_SPITE = 6,
-    STATUS_ANXIOUS = 7,
-    STATUS_VACANCY = 8,
-    STATUS_GLEEFUL = 9,
-    STATUS_CRANKY = 10,
-    STATUS_SLEEP = 11,
-    STATUS_NIGHTMARE = 12,
-    STATUS_DANCE = 13,
-    STATUS_PUPPET = 14,
-    STATUS_AGING = 15,
-    STATUS_BURN = 16,
-    STATUS_EAT = 17,
-    STATUS_FACELESS = 18,
-    STATUS_PHARAOH = 19,
-    STATUS_SPIDER = 20,
-    STATUS_STONE = 21,
-    STATUS_ICE = 22,
-    STATUS_BLOW = 23,
-    STATUS_OVER_SLEEP = 24,
-};
-
-/*
 Skill IDs 
 */
 
@@ -274,6 +243,45 @@ enum SkillEnum: u64 {
     SKILL_ELF_12= 167,
 };
 
+/*
+Love Skill IDs
+*/
+enum LoveSkillEnum: u64 {
+    LOVE_SKILL_APPEAL       = 0,
+    LOVE_SKILL_COVER_1      = 1,
+    LOVE_SKILL_REVENGE_1    = 2,
+    LOVE_SKILL_HELP_1       = 3,
+    LOVE_SKILL_GIVE_ITEM_1  = 4,
+    LOVE_SKILL_PINCER_1     = 5,
+    LOVE_SKILL_ADVICE_1     = 6,
+    LOVE_SKILL_GET_WELL_1   = 7,
+    LOVE_SKILL_ANGER_REVIVE_1   = 8,
+    LOVE_SKILL_HEART_VOICE_1    = 9,
+    LOVE_SKILL_PRAISE_1     = 10,
+    LOVE_SKILL_CARE_1       = 11,
+    LOVE_SKILL_SHARE_ITEM_1 = 12,
+    LOVE_SKILL_APPEAL_2     = 13,
+    LOVE_SKILL_COVER_2      = 14,
+    LOVE_SKILL_REVENGE_2    = 15,
+    LOVE_SKILL_HELP_2       = 16,
+    LOVE_SKILL_PINCER_2     = 17,
+    LOVE_SKILL_ADVICE_2     = 18,
+    LOVE_SKILL_GET_WELL_2   = 19,
+    LOVE_SKILL_APPEAL_3     = 20,
+    LOVE_SKILL_COVER_3      = 21,
+    LOVE_SKILL_REVENGE_3    = 22,
+    LOVE_SKILL_HELP_3       = 23,
+    LOVE_SKILL_PINCER_3     = 24,
+    LOVE_SKILL_GET_WELL_3   = 25,
+    /*Below here are quarrel skills*/
+    LOVE_SKILL_INTERRUPT    = 26,
+    LOVE_SKILL_SULK         = 27,
+    LOVE_SKILL_DISTRACTED   = 28,
+    LOVE_SKILL_DOGFIGHT     = 29,
+    LOVE_SKILL_CRANKY       = 30,
+    LOVE_SKILL_ANGRY        = 31,
+};
+
 enum JobEnum: u64 {
     JOB_FIGHTER = 0,
     JOB_WIZARD = 1,
@@ -290,6 +298,17 @@ enum JobEnum: u64 {
     JOB_SCIENTIST = 12,
     JOB_CAT = 13,
     JOB_ELF = 14,
+};
+
+enum PersonalityEnum : s64 {
+    PERSONALITY_NULL = -1,
+    PERSONALITY_KIND = 0,   // Kind
+    PERSONALITY_VITAL = 1,  // Energetic
+    PERSONALITY_MYPACE = 2, // Laid-Back
+    PERSONALITY_COOL = 3,   // Cool
+    PERSONALITY_WARY = 4,   // Cautious
+    PERSONALITY_GOOFY = 5,  // Airheaded
+    PERSONALITY_ROCKY = 6,  // Stubborn
 };
 
 /*

@@ -41,12 +41,13 @@ FUNC_PTR(0x00270000, PlayBattleState, void(*)(uintptr_t, const char *, float));
 FUNC_PTR(0x10027bb20, Some0x10CheckToBStateOther, void(*)(uintptr_t, int));
 FUNC_PTR(0x00279980, FUN_7100279980, bool(*)(uintptr_t));
 FUNC_PTR(0x0027bd30, SomeBStatePlayer, void(*)(uintptr_t, int));
-FUNC_PTR(0x00270630, FUN_7100270630, void(*)(uintptr_t, uintptr_t, long));
+FUNC_PTR(0x00270630, BStateEffectHandler, void(*)(uintptr_t, uintptr_t, long));
 FUNC_PTR(0x002ddec0, FUN_71002ddec0, long(*)(uintptr_t, int, int));
 FUNC_PTR(0x0028B200, HandleEnemyDamage, long(*)(uintptr_t, uintptr_t, bool, bool, bool, bool));
 FUNC_PTR(0x002af540, FUN_71002af540, long*(*)(uintptr_t, uintptr_t));
 FUNC_PTR(0x00266230, BattleStateFinalPlayer, long*(*)(long int*, long int*, int, char *, bool));
 FUNC_PTR(0x00270d00, DoMPHeal, void(*)(uintptr_t, long, int, ushort));
 FUNC_PTR(0x0026f370, SomeHealingFunc, uintptr_t(*)(float, uintptr_t, long));
+FUNC_PTR(0x0027bb20, CutInSkill, void(*)(uintptr_t, int));
 
 #undef FUNC_PTR

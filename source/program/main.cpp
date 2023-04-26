@@ -223,9 +223,13 @@ static const char* jobEnumToString[] = {
 JobEnum last_job = JOB_FIGHTER;
 int EventNum = 0;
 
+// Priest Basic Atk
 bool PriestMPAtk = false;
 bool PriestMPState = false;
 int PriestMPRestore = 0;
+
+// Cat Basic Atk
+bool CatOneMore = false;
 
 HOOK_DEFINE_TRAMPOLINE(ELinkCreate) {
 
@@ -275,18 +279,27 @@ HOOK_DEFINE_TRAMPOLINE(PctlLoad) {
 };
 
 HOOK_DEFINE_TRAMPOLINE(BattleState) {
-    static void Callback(intptr_t * miiInfo, const char* state, long * arg1) {
+    static void Callback(intptr_t * MiiInfo, const char* state, long * arg1) {
 
-        char buffer[500];
+        //char buffer[500];
 
-        //LOG("Mii Ptr: %ld", *miiInfo);
+        /*LOG("Mii Ptr: %ld", *miiInfo);
 
         int len = std::snprintf(buffer, sizeof(buffer), "Battle State: %s", state);
         svcOutputDebugString(buffer, len);
         
-        //LOG("3rd Param: %ld", arg1[1]);
+        LOG("3rd Param: %ld", arg1[1]);*/
 
-        return Orig(miiInfo, state, arg1);
+        Orig(MiiInfo, state, arg1);
+
+        std::string CatAgain = "SkillFriskStart";
+        if (state == CatAgain) {
+            if (CatOneMore) {
+                CutInSkill((uintptr_t)MiiInfo, 152);
+                CatOneMore = false;
+            }
+        }
+        return;
     }
 };
 
@@ -427,7 +440,7 @@ HOOK_DEFINE_TRAMPOLINE(RockyPersonalCheck) {
     static bool Callback(miiInfo *MiiInfo, uintptr_t skillIdx) {
         
         char buffer[500];
-        LOG("Stubborn Again! check for skill %ld.", skillIdx);
+        //LOG("Stubborn Again! check for skill %ld.", skillIdx);
 
         // If we got here while this is set, it
         // means that the priest just did a basic
@@ -438,8 +451,28 @@ HOOK_DEFINE_TRAMPOLINE(RockyPersonalCheck) {
             DoMPHeal((uintptr_t)MiiInfo, 71554516732, (int)*(short *)(MiiInfo->field_1 + 0xf), 1);   // 71437483340
             PriestMPState = false;
         }
+        
+        // Cats now have a "One More!", like
+        // enemy bosses get. This will totally
+        // be balanced. Yup.
+        if (last_job == JobEnum::JOB_CAT && CatOneMore) {
+            return true;
+        }
 
         return Orig(MiiInfo, skillIdx);
+    }
+};
+
+HOOK_DEFINE_TRAMPOLINE(RockyBStateHandler) {
+    static void Callback(miiInfo *MiiInfo, const char * BState1, const char * BState2) {
+        // If here because of Cat one more,
+        // do a different Battle State.
+        if (CatOneMore) {
+            return Orig(MiiInfo, "SkillFriskStart", "SkillCatPunchStart");
+        }
+        else {
+            return Orig(MiiInfo, BState1, BState2);
+        }
     }
 };
 
@@ -753,22 +786,31 @@ HOOK_DEFINE_TRAMPOLINE(BasicAttackState) {
         char buffer[500];
         //double uVar2;
         //long *plVar1;
-        long IsEnemyDead;
+        //long IsEnemyDead;
         //dmgclass dmg_struct;
         //long *puVar8;
 
         LOG("===BasicAtkBState===");
-        //LOG("===MiiInfoStruct===");
+        LOG("===MiiInfoStruct===");
 
-        /*size_t structSize = sizeof(miiInfo);
+        // Just in case!
+        PriestMPAtk = false;
+        PriestMPState = false;
+        CatOneMore = false;
+
+        size_t structSize = sizeof(miiInfo);
         char* structBytes = (char*)MiiInfo;
 
         for (size_t i = 0; i < structSize; i++) {
             LOG("byte %ld: %02X", i, structBytes[i]);
-        }*/
+        }
         
         if (last_job >= 0 && last_job < 15) {
             LOG("Job doing basic atk: %s", jobEnumToString[static_cast<int>(last_job)]);
+        }
+
+        if (last_job == JobEnum::JOB_CAT) {
+            CatOneMore = true;
         }
 
         // Priest basic attacks restore MP
@@ -786,8 +828,8 @@ HOOK_DEFINE_TRAMPOLINE(BasicAttackState) {
         }
 
         // Mage new basic attack states
-        if (last_job == JobEnum::JOB_WIZARD){
-            LOG("Job is Wizard, do new basic attack");
+        //if (last_job == JobEnum::JOB_WIZARD){
+            //LOG("Job is Wizard, do new basic attack");
 
             /*puVar8 = FUN_71002af540((uintptr_t)MiiInfo,dmgstructInput);
             if (puVar8 == 0x0) {
@@ -800,10 +842,10 @@ HOOK_DEFINE_TRAMPOLINE(BasicAttackState) {
             //uVar2 = SomeBStatePlayer3(MiiInfo, 0xf, 1);
             
             // BStates
-            SomeBStatePlayer2_0x55((uintptr_t)MiiInfo);
+            /*SomeBStatePlayer2_0x55((uintptr_t)MiiInfo);
             PlayBattleState((uintptr_t)MiiInfo, "SkillMagicStart", 1);
             PlayBattleState((uintptr_t)MiiInfo, "SkillFire", 1);
-            FUN_7100270630((uintptr_t)MiiInfo, 0, 0);
+            BStateEffectHandler((uintptr_t)MiiInfo, 0, 0);
 
             // Handle Enemy Damage
             IsEnemyDead = HandleEnemyDamage((uintptr_t)MiiInfo, TgtInfo, false, false, false, false);
@@ -816,7 +858,8 @@ HOOK_DEFINE_TRAMPOLINE(BasicAttackState) {
         // Otherwise, do things as normal
         else {
             return Orig(MiiInfo, TgtInfo, dmgstructInput, HelperInfo, param_5);
-        }
+        }*/
+        return Orig(MiiInfo, TgtInfo, dmgstructInput, HelperInfo, param_5);
     }
 };
 
@@ -864,6 +907,21 @@ HOOK_DEFINE_INLINE(VisibleHPMPInline) {
     }
 };
 
+HOOK_DEFINE_TRAMPOLINE(FPSTest) {
+    static void Callback(uintptr_t param1, long param2, int param3) {
+        char buffer[100];
+        LOG("===Game FPS===");
+        LOG("param1: %ld", param1);
+        LOG("param2: %ld", param2);
+        LOG("param3: %d", param3);
+
+        // Param 3:
+        // 1 = 60fps
+        // 2 = 30fps
+        return Orig(param1, param2, 1);
+    }
+};
+
 extern "C" void exl_main(void* x0, void* x1) {
     exl::hook::Initialize();
 
@@ -877,7 +935,7 @@ extern "C" void exl_main(void* x0, void* x1) {
     //ELinkInject::InstallAtOffset(0x00B1D7C0);
     //ELinkBufferCtor::InstallAtOffset(0x00B1DBF0);
     PctlLoad::InstallAtOffset(0x006C7340);
-    //BattleState::InstallAtOffset(0x00270000);
+    BattleState::InstallAtOffset(0x00270000);
     //IsFueding::InstallAtOffset(0x00273360);
     HealingSkills::InstallAtOffset(0x00291AC0);
     RockyPersonalCheck::InstallAtOffset(0x00279850);
@@ -898,6 +956,8 @@ extern "C" void exl_main(void* x0, void* x1) {
     //VisibleHPMPInline::InstallAtOffset(0x008efacc);
     GetDmgOrHealAmount::InstallAtOffset(0x0026a010);
     //HandleEnemyDamage_Hook::InstallAtOffset(0x0028b200);
+    RockyBStateHandler::InstallAtOffset(0x002b2b50);
+    //FPSTest::InstallAtOffset(0x00c03c60);
 }
 
 extern "C" NORETURN void exl_exception_entry() {
