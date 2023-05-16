@@ -230,6 +230,7 @@ int PriestMPRestore = 0;
 
 // Cat Basic Atk
 bool CatOneMore = false;
+bool CatBStateCheck = false;
 
 HOOK_DEFINE_TRAMPOLINE(ELinkCreate) {
 
@@ -279,27 +280,18 @@ HOOK_DEFINE_TRAMPOLINE(PctlLoad) {
 };
 
 HOOK_DEFINE_TRAMPOLINE(BattleState) {
-    static void Callback(intptr_t * MiiInfo, const char* state, long * arg1) {
-
-        //char buffer[500];
-
-        /*LOG("Mii Ptr: %ld", *miiInfo);
-
-        int len = std::snprintf(buffer, sizeof(buffer), "Battle State: %s", state);
-        svcOutputDebugString(buffer, len);
-        
-        LOG("3rd Param: %ld", arg1[1]);*/
-
+    static void Callback(actorInfo *MiiInfo, const char* state, float *arg1) {
+        char buffer[500];
+        LOG("Battle State: %s", state);
+        //LOG("3rd Param: %ld", arg1);
         Orig(MiiInfo, state, arg1);
 
-        std::string CatAgain = "SkillFriskStart";
-        if (state == CatAgain) {
-            if (CatOneMore) {
-                CutInSkill((uintptr_t)MiiInfo, 152);
-                CatOneMore = false;
-            }
+        if (CatBStateCheck) {
+            LOG("Cat 1 more");
+            CutInSkill((uintptr_t)MiiInfo, 152);
+            CatOneMore = false;
+            CatBStateCheck = false;
         }
-        return;
     }
 };
 
@@ -437,7 +429,7 @@ HOOK_DEFINE_TRAMPOLINE(ELinkBufferCtor) {
 };
 
 HOOK_DEFINE_TRAMPOLINE(RockyPersonalCheck) {
-    static bool Callback(miiInfo *MiiInfo, uintptr_t skillIdx) {
+    static bool Callback(actorInfo *MiiInfo, uintptr_t skillIdx) {
         
         char buffer[500];
         //LOG("Stubborn Again! check for skill %ld.", skillIdx);
@@ -456,6 +448,8 @@ HOOK_DEFINE_TRAMPOLINE(RockyPersonalCheck) {
         // enemy bosses get. This will totally
         // be balanced. Yup.
         if (last_job == JobEnum::JOB_CAT && CatOneMore) {
+            LOG("Cat 1 more returned true");
+            CatBStateCheck = true;
             return true;
         }
 
@@ -464,7 +458,7 @@ HOOK_DEFINE_TRAMPOLINE(RockyPersonalCheck) {
 };
 
 HOOK_DEFINE_TRAMPOLINE(RockyBStateHandler) {
-    static void Callback(miiInfo *MiiInfo, const char * BState1, const char * BState2) {
+    static void Callback(actorInfo *MiiInfo, const char * BState1, const char * BState2) {
         // If here because of Cat one more,
         // do a different Battle State.
         if (CatOneMore) {
@@ -513,16 +507,16 @@ HOOK_DEFINE_TRAMPOLINE(DmgConstructor1) {
 
 
 HOOK_DEFINE_TRAMPOLINE(BasicAtk) {
-    static void Callback(intptr_t miiInfo, bool arg1, uintptr_t arg2) {
+    static void Callback(intptr_t actorInfo, bool arg1, uintptr_t arg2) {
 
         char buffer[500];
         LOG("BAtk param_3: %ld", arg2);
 
-        Orig(miiInfo, true, arg2);
+        Orig(actorInfo, true, arg2);
     }
 };
 
-static bool SkillNewStart(miiInfo *MiiInfo, intptr_t MiiTgtInfo) {
+static bool SkillNewStart(actorInfo *MiiInfo, intptr_t MiiTgtInfo) {
     /*bool PersonalityCheck;
     //long uVar1;
     //float *Side;
@@ -550,7 +544,7 @@ static bool SkillNewStart(miiInfo *MiiInfo, intptr_t MiiTgtInfo) {
     SomeSkillStringFunc(0x3f800000, MiiInfo, 0x8C, MiiTgtInfo, &HelperMiis);
     LOG("SomeSkillStringFunc: Passed");
 
-    SomeBStatePlayer3(MiiInfo, 0x8C, 1);
+    SkillEffectAndMsg(MiiInfo, 0x8C, 1);
     LOG("SomeBStatePlayer 3: Passed");
 
     HelperMiis = 0;
@@ -585,7 +579,7 @@ static bool SkillNewStart(miiInfo *MiiInfo, intptr_t MiiTgtInfo) {
 };
 
 HOOK_DEFINE_TRAMPOLINE(HealingSkills) {
-    static bool Callback(miiInfo *MiiInfo, SkillEnum skillIdx, uintptr_t param3, uintptr_t MiiTgtInfo) {
+    static bool Callback(actorInfo *MiiInfo, uintptr_t skillIdx, uintptr_t param3, uintptr_t MiiTgtInfo) {
         
         char buffer[500];
         LOG("HealingSkills Entered");
@@ -635,14 +629,20 @@ HOOK_DEFINE_TRAMPOLINE(SkillDisabler) {
         SkillData = *(int **)(BattleInfo + 0x158) + (long)(int)SkillStatus * 2;
         SomeVar = *SkillData;
         //LOG("BattleInfo 0x158: %ld", BattleInfo + 0x158);
-        LOG("SkillIdx: %d", SkillData[0]);
+        //LOG("SkillIdx: %ld", SkillData[0]);
+        for (auto& skill : SkillEnumStrings) {
+            if (skill.first == (SkillEnum)SkillData[0]) {
+                LOG("Skill: %s", skill.second)
+                break;
+            }
+        }
         LOG("SkillStatus: %d", SkillData[1]);
         //LOG("SkillData: %d", SomeVar);
 
-        if (SomeVar == SkillEnum::SKILL_SCIENTIST_09) {
+        /*if (SomeVar == SkillEnum::SKILL_SCIENTIST_09) {
             SkillData[1] = 0;
             SomeVar = *SkillData;
-        }
+        }*/
 
         // This is required otherwise it always gets skill info of slot 0
         *(char *)(BattleInfo + 0x192) = (char)SkillSlot;
@@ -699,6 +699,8 @@ HOOK_DEFINE_TRAMPOLINE(DoesSkillTgtAlly_Hook) {
 HOOK_DEFINE_TRAMPOLINE(DoesSkillTgtEnemy_Hook) {
     static bool Callback(uintptr_t BattleInfo, SkillEnum SkillIdx) {
         switch(SkillIdx){
+            case SKILL_SCIENTIST_10:
+                return true;
             default:
                 return Orig(BattleInfo, SkillIdx);
         }
@@ -762,10 +764,10 @@ HOOK_DEFINE_TRAMPOLINE(GetDmgOrHealAmount) {
         }
         // This is what dictates the number in the UI. For some reason,
         //  its seperate. Happens after my manual call of DoMPHeal.
-        if (param_1 == 71555737708) {
+        /*if (param_1 == 71555737708) {
             //LOG("Return MP Heal: %d", PriestMPRestore);
             return PriestMPRestore;
-        }
+        }*/
 
         int ret = Orig(param_1);
         //LOG("Output: %d", ret);
@@ -774,7 +776,7 @@ HOOK_DEFINE_TRAMPOLINE(GetDmgOrHealAmount) {
 };
 
 HOOK_DEFINE_TRAMPOLINE(HandleEnemyDamage_Hook) {
-    static void Callback(miiInfo *MiiInfo, uintptr_t EnemyInfo, bool param3, bool param4, bool param5, bool param6) {
+    static void Callback(actorInfo *MiiInfo, uintptr_t EnemyInfo, bool param3, bool param4, bool param5, bool param6) {
         char buffer[500];
         LOG("===HandleEnemydamage===")
         return Orig(MiiInfo, EnemyInfo, param3, param4, param5, param6);
@@ -782,7 +784,7 @@ HOOK_DEFINE_TRAMPOLINE(HandleEnemyDamage_Hook) {
 };
 
 HOOK_DEFINE_TRAMPOLINE(BasicAttackState) {
-    static bool Callback(miiInfo *MiiInfo, uintptr_t TgtInfo, uintptr_t dmgstructInput, uintptr_t HelperInfo, uintptr_t param_5) {
+    static bool Callback(actorInfo *MiiInfo, actorInfo *EnemyInfo, uintptr_t dmgstructInput, uintptr_t HelperInfo, uintptr_t param_5) {
         char buffer[500];
         //double uVar2;
         //long *plVar1;
@@ -798,7 +800,7 @@ HOOK_DEFINE_TRAMPOLINE(BasicAttackState) {
         PriestMPState = false;
         CatOneMore = false;
 
-        size_t structSize = sizeof(miiInfo);
+        size_t structSize = sizeof(actorInfo);
         char* structBytes = (char*)MiiInfo;
 
         for (size_t i = 0; i < structSize; i++) {
@@ -859,7 +861,11 @@ HOOK_DEFINE_TRAMPOLINE(BasicAttackState) {
         else {
             return Orig(MiiInfo, TgtInfo, dmgstructInput, HelperInfo, param_5);
         }*/
-        return Orig(MiiInfo, TgtInfo, dmgstructInput, HelperInfo, param_5);
+        bool ret = Orig(MiiInfo, EnemyInfo, dmgstructInput, HelperInfo, param_5);
+
+        InflictDance(uintptr_t(MiiInfo), uintptr_t(EnemyInfo), "SkillDanceArrowHitCpt","SkillDanceArrowAlreadyCpt");
+
+        return ret;
     }
 };
 
@@ -916,6 +922,65 @@ HOOK_DEFINE_TRAMPOLINE(FPSTest) {
     }
 };
 
+HOOK_DEFINE_TRAMPOLINE(ReduceMPAfterSkill) {
+    static void Callback(actorInfo *MiiInfo, SkillEnum SkillIdx) {
+        char buffer [100];
+        int BeforeMP = MiiInfo->CurMP;
+        Orig(MiiInfo, SkillIdx);
+        int AfterMP = MiiInfo->CurMP;
+
+        // Optimize (Scientist10_)
+        // Reduce MP Cost by 50%
+        actorInfo *Scientist = NULL;
+        long SomeVar2;
+        int Optimize = (BeforeMP - AfterMP) * 0.5;
+        int PartySize;
+        int rnd = 0;
+
+        int PartyIdx = GetActorIdx(MiiInfo->field_2);
+        long *SomeVar1 = MiiInfo->field_2;
+        // This probs isn't needed,
+        // leftover from reference.
+        if (0 < PartyIdx) {
+            PartyIdx = 0;
+        }
+        // Iterate through all party members
+        // looking for someone who knows
+        // optimize, and meets other
+        // conditions like is not feuding.
+        do {
+            actorInfo *ActorInfo = (actorInfo *)GetActorInfo(SomeVar1, PartyIdx);
+            if (((ActorInfo != NULL) && (ActorInfo != MiiInfo)) &&
+                (SomeVar2 = AtkTypeJobSkillCheck((uintptr_t)ActorInfo, SKILL_SCIENTIST_10, false), (SomeVar2 & 1) != 0)) {
+                // There's a Mii on the team with Optimize (Scientist10_)
+                // Todo: Add checks for fueding and if alive
+                LOG("Found scientist with Optimize");
+                Scientist = ActorInfo;
+                // Using the game's PRNG to avoid compatability issues
+                rnd = ((int)SkillActivationRNG(uintptr_t(Scientist)) / 1000000);
+                LOG("rnd# is %d", rnd);
+            }
+            PartyIdx += 1;
+            PartySize = GetActorIdx(MiiInfo->field_2);
+            SomeVar1 = MiiInfo->field_2;
+        } while (PartyIdx < PartySize);
+
+        if ((Scientist != NULL) && (rnd <= 50)) {
+            // If a Mii with Optimize was found, and passes the RNG activation chance
+            LOG("Optimize checks passed");
+            MiiInfo->CurMP = AfterMP + Optimize;
+            // BStates
+            SkillEffectAndMsg(uintptr_t(Scientist), SKILL_SCIENTIST_10, 1);
+            SomeBStatePlayer2_0x55(uintptr_t(Scientist));
+            PlayBattleState(uintptr_t(Scientist), "SkillOptimizeStart", 75345442896);
+            CutInSkill((uintptr_t)Scientist, SKILL_SCIENTIST_10);
+            ReduceMP((uintptr_t)Scientist, SKILL_SCIENTIST_10);
+            PlayBattleState(uintptr_t(Scientist), "SkillOptimize", 75345442896);
+            BStateEffectHandler(uintptr_t(Scientist), uintptr_t(MiiInfo), 0);
+        }
+    }
+};
+
 extern "C" void exl_main(void* x0, void* x1) {
     exl::hook::Initialize();
 
@@ -931,11 +996,10 @@ extern "C" void exl_main(void* x0, void* x1) {
     PctlLoad::InstallAtOffset(0x006C7340);
     BattleState::InstallAtOffset(0x00270000);
     //IsFueding::InstallAtOffset(0x00273360);
-    HealingSkills::InstallAtOffset(0x00291AC0);
+    //HealingSkills::InstallAtOffset(0x00291AC0);
     RockyPersonalCheck::InstallAtOffset(0x00279850);
     DmgConstructor1::InstallAtOffset(0x00269D60);
     //BasicAtk::InstallAtOffset(0x002EA6A0);
-    //SkillDisabler::InstallAtOffset(0x00235720);
     SkillDisabler::InstallAtOffset(0x00235580);
     DoesSkillTgtAlly_Hook::InstallAtOffset(0x00278500);
     DoesSkillTgtEnemy_Hook::InstallAtOffset(0x00278430);
@@ -949,9 +1013,10 @@ extern "C" void exl_main(void* x0, void* x1) {
     //EventActionBool::InstallAtOffset(0x00944ff0);
     //VisibleHPMPInline::InstallAtOffset(0x008efacc);
     GetDmgOrHealAmount::InstallAtOffset(0x0026a010);
-    //HandleEnemyDamage_Hook::InstallAtOffset(0x0028b200);
+    HandleEnemyDamage_Hook::InstallAtOffset(0x0028b200);
     RockyBStateHandler::InstallAtOffset(0x002b2b50);
-    FPSTest::InstallAtOffset(0x00c03c60);
+    //FPSTest::InstallAtOffset(0x00c03c60);
+    ReduceMPAfterSkill::InstallAtOffset(0x0027d4a0);
 }
 
 extern "C" NORETURN void exl_exception_entry() {

@@ -15,14 +15,19 @@
 
 /*
 This file will have all things related to the
-"MiiInfo" structure. This is going to get messy.
+"ActorInfo" structure. This is going to get messy.
 
 Oh also, this is used for enemies as well. Needs
 further testing on what is similar between them
 though.
 */
 
-struct miiInfo {
+/*
+Documentation of (*(code *)actorInfo->field_0[0xFF]) (); stuff
+[0x1f] = Job
+*/
+
+struct actorInfo {
     long field_0;   //0x0
     long *field_1;  //0x8   - BState Related
     long *field_2;  //0x10  - BState Related
@@ -34,42 +39,55 @@ struct miiInfo {
     short Spd;      //0x22  - Spd after modifiers       //
     short CurHP;    //0x24  - Current HP
     short CurMP;    //0x26  - Current MP
-    long long field_8;  //0x28 Padding
-    int field_9;    //0x30
-    short field_10;   //0x34
-    int field_11;   //0x38
-    int field_12;   //0x3C
-    uint field_13;  //0x40
-    uint field_14;  //0x44
-    uint field_15;  //0x48
-    int field_16;   //0x4C
-    long long field_17; //0x50 Padding
-    int field_18;   //0x58 Padding
-    char field_19;  //0x5C
-    short field_20; //0x5D Padding
-    char field_21;  //0x5F Padding
-    int field_22;   //0x60
-    char field_33;  //0x64
+    char field_8;   //0x28 ???
+    char field_9;   //0x29 Set to 1 when a Mii is Angry or Excited
+    int field_10;   //0x2A Padding
+    short field_11; //0x2E Padding
+    int field_12;   //0x30
+    short field_13; //0x34 ???
+    short field_14; //0x36 ???
+    short field_15; //0x38 ???
+    short field_16; //0x3A Padding
+    int field_17;   //0x3C ???
+    uint field_18;  //0x40 ???
+    uint field_19;  //0x44 ???
+    uint field_20;  //0x48 ???
+    int field_21;   //0x4C ???
+    short field_22; //0x50 Padding
+    char field_23;  //0x52 ???
+    char field_24;  //0x53 ???
+    int field_25;   //0x58 Padding
+    int field_26;   //0x58 Padding
+    char field_27;  //0x5C ???
+    char field_28;  //0x5D Padding
+    bool EnemyGuard;//0x5C - Is the enemy guarding. Prevents status effects.
+    char field_29;  //0x5F Padding
+    int field_30;   //0x60 ???
+    char field_31;  //0x64 ???
     char ShieldType;  //0x65 - See ShieldTypes enum
-    short field_35; //0x66 Padding
-    short field_36; //0x68
-    short field_37; //0x6A Padding
-    uint StatusEffect;  //0x6C - See StatusEffect enum
-    ushort field_39;//0x70
-    short field_40; //0x72
-    short field_41; //0x74
-    short field_42; //0x76
-    int field_43;   //0x78 Padding
-    short field_44; //0x7C - For enemies, this is a byte that controls
-                    //       if the attack was a "HardAttack" or not
-    short field_45; //0x7E Padding
-    char field_46;  //0x80
-    char field_47;  //0x81 Padding
-    short field_48; //0x82 Padding
-    uint field_49;  //0x84  - Could be job, needs to be checked
-    uint field_50;  //0x88 - Something to do with relationships
-    char field_51;  //0x8C Padding
-    char field_52;  //0x8D
+    short field_35; //0x66 ???
+    short field_36; //0x68 ???
+    short field_37; //0x6A ???
+    short StatusEffect;  //0x6C - See StatusEffect enum
+                    // *(uint *)&ActorInfo->status_effect_0x6c;
+                    // ^ can be used to check status, or even set it?
+    short field_38; //0x6E ???
+    ushort field_39;//0x70 ???
+    short field_40; //0x72 ???
+    short field_41; //0x74 ???
+    char EnemySize; //0x76 - '\x01' small, '\x02' medium
+    char EnemySize2; //0x77 - '\0' normal size
+    short field_43; //0x78 ???
+    short field_44; //0x7A Padding
+    short EnemyAtk; //0x7C - Basic attack type for both Miis
+                    //       and enemies.
+    short field_45; //0x7E ???
+    short field_46;  //0x80 ???
+    short field_47; //0x82 Padding
+    uint field_48;  //0x84  - Could be job, needs to be checked
+    uint SkillInfo;  //0x88 - Something to do with relationships
+    char field_50;  //0x8C Padding
+    char field_51;  //0x8D
 };
 
 /*
@@ -80,7 +98,7 @@ enum ShieldTypes : u64 {
   SHIELD_NONE = 0,
   SHIELD_BARRIER = 4,
   SHIELD_SPRINKLE = 8,
-  SHIELD_AEGIS = 12,  // This assumed, needs testing
+  SHIELD_AEGIS = 12,  // This is assumed, needs testing
 };
 
 
