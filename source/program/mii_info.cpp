@@ -28,9 +28,9 @@ Documentation of (*(code *)actorInfo->field_0[0xFF]) (); stuff
 */
 
 struct actorInfo {
-    long field_0;   //0x0
+    long field_0;   //0x0 code[0x1f] - using magic or not
     long *field_1;  //0x8   - BState Related
-    long *field_2;  //0x10  - BState Related
+    long *Actor_Idx;  //0x10  - BState Related
     short MaxHP;    //0x18  - Max HP after modifiers    // All of these
     short MaxMP;    //0x1A  - Max MP after modifiers    // after "modifiers"
     short Atk;      //0x1C  - Atk after modifiers       // are the stats
@@ -56,7 +56,9 @@ struct actorInfo {
     short field_22; //0x50 Padding
     char field_23;  //0x52 ???
     char field_24;  //0x53 ???
-    int field_25;   //0x58 Padding
+    char field_25;  //0x54 Padding
+    char HasGrub;   //0x55 - 1 by default (enemy hasn't had grub stolen from it. 0 if has already been stolen from.)
+    short grubpadding; //0x56 Padding
     int field_26;   //0x58 Padding
     char field_27;  //0x5C ???
     char field_28;  //0x5D Padding
@@ -66,7 +68,7 @@ struct actorInfo {
     char field_31;  //0x64 ???
     char ShieldType;  //0x65 - See ShieldTypes enum
     short field_35; //0x66 ???
-    short field_36; //0x68 ???
+    short field_36; //0x68 ??? Incremented/Decremented after every skill a Mii uses
     short field_37; //0x6A ???
     short StatusEffect;  //0x6C - See StatusEffect enum
                     // *(uint *)&ActorInfo->status_effect_0x6c;
@@ -84,23 +86,35 @@ struct actorInfo {
     short field_45; //0x7E ???
     short field_46;  //0x80 ???
     short field_47; //0x82 Padding
-    uint field_48;  //0x84  - Could be job, needs to be checked
-    uint SkillInfo;  //0x88 - Something to do with relationships
+    uint ActiveBuff;//0x84 - Active Buff (Will go away at next turn start)
+    uint SkillInfo; //0x88 - Skill info, unusre if personal, job, or both // ActorInfo->SkillInfo_0x88 | 0x20; (It is now this Mii's turn)
     char field_50;  //0x8C Padding
     char field_51;  //0x8D
 };
 
 /*
-Shield Types (MiiInfo->0x65)
+1 Turn Buffs (MiiInfo->0x84)
 */
-
-enum ShieldTypes : u64 {
-  SHIELD_NONE = 0,
-  SHIELD_BARRIER = 4,
-  SHIELD_SPRINKLE = 8,
-  SHIELD_AEGIS = 12,  // This is assumed, needs testing
+enum Buffs : u64 {
+  BUFF_GUARD = 0, // Warrior "Proud Protector"
+  BUFF_CREEP = 1, // Thief "Sneak Attack" 
+  BUFF_ENCORE = 2,
+  BUFF_BANQUET_SOLO = 3,
+  BUFF_BANQUET_HELP = 4,
+  BUFF_POLISH_NAIL = 5,
+  BUFF_POLISH_NAIL_END = 6,
+  BUFF_REPAIR = 7,
+  BUFF_WARY_SLOW = 8, // Cautious "Warm Up"
 };
 
+/*
+Shield Types (MiiInfo->0x65)
+*/
+enum ShieldTypes : u64 {
+  SHIELD_NONE = 0,
+  SHIELD_BARRIER = 4, // Also Forest Aegis
+  SHIELD_SPRINKLE = 8,
+};
 
 /*
 Status Effects (MiiInfo->0x6C)

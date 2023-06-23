@@ -516,7 +516,7 @@ HOOK_DEFINE_TRAMPOLINE(BasicAtk) {
     }
 };
 
-static bool SkillNewStart(actorInfo *MiiInfo, intptr_t MiiTgtInfo) {
+//static bool SkillNewStart(actorInfo *MiiInfo, intptr_t MiiTgtInfo) {
     /*bool PersonalityCheck;
     //long uVar1;
     //float *Side;
@@ -575,8 +575,8 @@ static bool SkillNewStart(actorInfo *MiiInfo, intptr_t MiiTgtInfo) {
             return 1;
         }
     }*/
-    return 0;
-};
+    //return 0;
+//};
 
 HOOK_DEFINE_TRAMPOLINE(HealingSkills) {
     static bool Callback(actorInfo *MiiInfo, uintptr_t skillIdx, uintptr_t param3, uintptr_t MiiTgtInfo) {
@@ -598,8 +598,9 @@ HOOK_DEFINE_TRAMPOLINE(HealingSkills) {
                 /*Scientist09_*/
                 LOG("Scientist09_");
                 //return false;
-                SkillNewStart(MiiInfo, MiiTgtInfo);
-                return true;
+                //SkillNewStart(MiiInfo, MiiTgtInfo);
+                //return true;
+                return Orig(MiiInfo, SkillEnum::SKILL_SCIENTIST_CURE_CODE, param3, MiiTgtInfo);
             break;
             default:
                 return Orig(MiiInfo, skillIdx, param3, MiiTgtInfo);
@@ -636,13 +637,13 @@ HOOK_DEFINE_TRAMPOLINE(SkillDisabler) {
                 break;
             }
         }
-        LOG("SkillStatus: %d", SkillData[1]);
+        //LOG("SkillStatus: %d", SkillData[1]);
         //LOG("SkillData: %d", SomeVar);
 
-        /*if (SomeVar == SkillEnum::SKILL_SCIENTIST_09) {
+        if (SomeVar == SkillEnum::SKILL_SCIENTIST_09) {
             SkillData[1] = 0;
             SomeVar = *SkillData;
-        }*/
+        }
 
         // This is required otherwise it always gets skill info of slot 0
         *(char *)(BattleInfo + 0x192) = (char)SkillSlot;
@@ -981,6 +982,27 @@ HOOK_DEFINE_TRAMPOLINE(ReduceMPAfterSkill) {
     }
 };
 
+HOOK_DEFINE_TRAMPOLINE(SkillSwitch) {
+    static int Callback(actorInfo *MiiInfo, SkillEnum SkillIdx) {
+        switch (SkillIdx) {
+            case SKILL_SCIENTIST_09:
+                return 4;
+            default:
+                return Orig(MiiInfo, SkillIdx);
+        }
+    }
+};
+
+HOOK_DEFINE_TRAMPOLINE(ChangeEquipment) {
+    static void Callback(uintptr_t param_1, int param_2) {
+        char buffer[100];
+
+        LOG("Param 2: %d", param_2);
+
+        return Orig(param_1, param_2);
+    }
+};
+
 extern "C" void exl_main(void* x0, void* x1) {
     exl::hook::Initialize();
 
@@ -989,6 +1011,10 @@ extern "C" void exl_main(void* x0, void* x1) {
     namespace reg = armv8::reg;
     namespace inst = armv8::inst;
 
+    // Code Patcher for quick tests
+    patch::CodePatcher p(0x00488024);
+    p.WriteInst(inst::Movz(reg::W0, 1));
+
     ELinkCreate::InstallAtOffset(0x00B1DCE0);
     ELinkLookup::InstallAtOffset(0x00B1D590);
     ELinkInject::InstallAtOffset(0x00B1D7C0);
@@ -996,7 +1022,7 @@ extern "C" void exl_main(void* x0, void* x1) {
     PctlLoad::InstallAtOffset(0x006C7340);
     BattleState::InstallAtOffset(0x00270000);
     //IsFueding::InstallAtOffset(0x00273360);
-    //HealingSkills::InstallAtOffset(0x00291AC0);
+    HealingSkills::InstallAtOffset(0x00291AC0);
     RockyPersonalCheck::InstallAtOffset(0x00279850);
     DmgConstructor1::InstallAtOffset(0x00269D60);
     //BasicAtk::InstallAtOffset(0x002EA6A0);
@@ -1017,6 +1043,8 @@ extern "C" void exl_main(void* x0, void* x1) {
     RockyBStateHandler::InstallAtOffset(0x002b2b50);
     //FPSTest::InstallAtOffset(0x00c03c60);
     ReduceMPAfterSkill::InstallAtOffset(0x0027d4a0);
+    SkillSwitch::InstallAtOffset(0x00276f30);
+    ChangeEquipment::InstallAtOffset(0x00487750);
 }
 
 extern "C" NORETURN void exl_exception_entry() {
