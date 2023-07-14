@@ -1,3 +1,5 @@
+#pragma once
+
 #include <lib.hpp>
 #include <nn.hpp>
 #include <cstring>
@@ -6,13 +8,6 @@
 #include "func_ptrs.hpp"
 #include "sead/container/seadBuffer.h"
 #include "sead/prim/seadSafeString.hpp"
-
-#define LOG(...)                                                    \
-  {                                                                 \
-      int length = snprintf(buffer, sizeof(buffer), __VA_ARGS__);   \
-      svcOutputDebugString(buffer, length);                         \
-  }
-
 /*
 This file will have all things related to the
 "ActorInfo" structure. This is going to get messy.
@@ -70,11 +65,10 @@ struct actorInfo {
     short field_35; //0x66 ???
     short field_36; //0x68 ??? Incremented/Decremented after every skill a Mii uses
     short field_37; //0x6A ???
-    short StatusEffect;  //0x6C - See StatusEffect enum
+    uint StatusEffect;  //0x6C - See StatusEffect enum
                     // *(uint *)&ActorInfo->status_effect_0x6c;
                     // ^ can be used to check status, or even set it?
-    short field_38; //0x6E ???
-    ushort field_39;//0x70 ???
+    ushort field_39;//0x70 ??? 70 and 72 are set to 0xffff and -1 when a status is cleared
     short field_40; //0x72 ???
     short field_41; //0x74 ???
     char EnemySize; //0x76 - '\x01' small, '\x02' medium
@@ -90,6 +84,7 @@ struct actorInfo {
     uint SkillInfo; //0x88 - Skill info, unusre if personal, job, or both // ActorInfo->SkillInfo_0x88 | 0x20; (It is now this Mii's turn)
     char field_50;  //0x8C Padding
     char field_51;  //0x8D
+    uint SelectedSkill; // 0x8E - use (uint)*(ushort *)&actorInfo->SelectedSkill
 };
 
 /*
@@ -119,7 +114,7 @@ enum ShieldTypes : u64 {
 /*
 Status Effects (MiiInfo->0x6C)
 */
-enum StatusEffect: u64 {
+enum StatusEffect : u64 {
     STATUS_NORMAL = 0,
     STATUS_ANGRY = 1,
     STATUS_LAUGH = 2,

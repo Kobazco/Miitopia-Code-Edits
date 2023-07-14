@@ -32,3 +32,6 @@ SETUP_FUNC_PTR(AtkTypeJobSkillCheck);
 SETUP_FUNC_PTR(get_rand_U32);
 SETUP_FUNC_PTR(ReduceMP);
 SETUP_FUNC_PTR(SkillActivationRNG);
+SETUP_FUNC_PTR(SkillJobCheck);
+SETUP_FUNC_PTR(BugCrushStart);
+SETUP_FUNC_PTR(BugCrush);

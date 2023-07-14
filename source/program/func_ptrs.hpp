@@ -23,6 +23,8 @@
 
 
 #include "misc_types.hpp"
+#include "mii_info.hpp"
+#include "enums.hpp"
 
 // Misc.
 FUNC_PTR(0x002B7670, SkillCureAllStart, void(*)(uintptr_t, short, uintptr_t));
@@ -31,8 +33,8 @@ FUNC_PTR(0x00278430, DoesSkillTgtEnemy, bool(*)(long, int));
 FUNC_PTR(0x00278500, DoesSkillTgtAlly, bool(*)(long, int));
 FUNC_PTR(0x00278550, DoesSkillTgtAllEnemy, bool(*)(long, int));
 // Required by Skills
-FUNC_PTR(0x00c127f0, SomeInitFunc, void(*)(uintptr_t*, int, uintptr_t*));
-FUNC_PTR(0x00274840, GetHelperMiis, void(*)(uintptr_t, uintptr_t*, uintptr_t));
+FUNC_PTR(0x00c127f0, SomeInitFunc, void(*)(uintptr_t *, int, uintptr_t *));
+FUNC_PTR(0x00274840, GetHelperMiis, void(*)(actorInfo *, uintptr_t *, uintptr_t));
 FUNC_PTR(0x002766d0, SomeSkillStringFunc, void(*)(long, uintptr_t, int, uintptr_t, uintptr_t*));
 FUNC_PTR(0x002de430, SkillEffectAndMsg, void(*)(uintptr_t, int, uint));
 FUNC_PTR(0x002b28f0, MypaceAction, bool(*)(uintptr_t, int, float));
@@ -54,6 +56,11 @@ FUNC_PTR(0x00266f40, GetActorIdx, ushort(*)(long *));
 FUNC_PTR(0x00266f60, GetActorInfo, long(*)(long *, uint));
 FUNC_PTR(0x00275390, AtkTypeJobSkillCheck, long(*)(uintptr_t, int, bool));
 FUNC_PTR(0x0027d4a0, ReduceMP, void(*)(uintptr_t, int));
+FUNC_PTR(0x002ddb80, SkillJobCheck, uint(*)(uintptr_t, int));
+FUNC_PTR(0x00274ff0, SkillInfoRelated, void(*)(float, actorInfo *, SkillEnum, uintptr_t *));
+// Skills
+FUNC_PTR(0x002c9a70, BugCrushStart, void(*)(actorInfo *, actorInfo *, uintptr_t *));
+FUNC_PTR(0x002c9e60, BugCrush, void(*)(actorInfo *, actorInfo *, uintptr_t *));
 // PRNG
 FUNC_PTR(0x00c484c0, get_rand_U32, uint(*)(uint *));
 FUNC_PTR(0x0026f230, SkillActivationRNG, ulong(*)(uintptr_t));

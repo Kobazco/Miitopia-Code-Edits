@@ -8,8 +8,10 @@
 #include "sead/prim/seadSafeString.hpp"
 
 // New files for organization
-#include "enums.cpp"
-#include "mii_info.cpp"
+#include "enums.hpp"
+#include "mii_info.hpp"
+#include "new_skills.hpp"
+//#include "new_skills.cpp"
 
 #define LOG(...)                                                    \
   {                                                                 \
@@ -280,10 +282,10 @@ HOOK_DEFINE_TRAMPOLINE(PctlLoad) {
 };
 
 HOOK_DEFINE_TRAMPOLINE(BattleState) {
-    static void Callback(actorInfo *MiiInfo, const char* state, float *arg1) {
+    static void Callback(actorInfo *MiiInfo, const char* state, long arg1) {
         char buffer[500];
         LOG("Battle State: %s", state);
-        //LOG("3rd Param: %ld", arg1);
+        LOG("3rd Param: %ld", arg1);
         Orig(MiiInfo, state, arg1);
 
         if (CatBStateCheck) {
@@ -488,7 +490,7 @@ HOOK_DEFINE_TRAMPOLINE(DmgConstructor1) {
 
         //LOG("========DMGCLASS========");
         //LOG("AtkKind 0x00: %d", arg2->AtkKind);
-        //LOG("field_2 0x02: %d", arg2->field_2);
+        //LOG("Actor_Idx 0x02: %d", arg2->Actor_Idx);
         //LOG("field_4 0x04: %d", arg2->field_4);
         //LOG("Final Dmg Mod 0x08: %f" , arg2->FinalDmgMod);
         //LOG("Final Dmg %% 0x08: %f %%", arg2->FinalDmgMod * 100);
@@ -499,8 +501,8 @@ HOOK_DEFINE_TRAMPOLINE(DmgConstructor1) {
         //LOG("Bool 0x1D: %s", arg2->SomeBool ? "true" : "false");
         //LOG("field_1E 0x1E: %d", arg2->field_1E);
         //LOG("field_1F 0x1F: %d", arg2->field_1F);
-        //LOG("field_20 0x20: %d", arg2->field_20);
-        //LOG("field_22 0x22: %d", arg2->field_22);
+        //LOG("Actor_Idx0 0x20: %d", arg2->Actor_Idx0);
+        //LOG("Actor_Idx2 0x22: %d", arg2->Actor_Idx2);
     }
 };
 
@@ -594,14 +596,14 @@ HOOK_DEFINE_TRAMPOLINE(HealingSkills) {
         //LOG("Curr Skill: %s", skillEnumToString[static_cast<int>(skillIdx)]);
 
         switch(skillIdx) {
-            case SkillEnum::SKILL_SCIENTIST_09:
+            //case SkillEnum::SKILL_SCIENTIST_09:
                 /*Scientist09_*/
-                LOG("Scientist09_");
+                //LOG("Scientist09_");
                 //return false;
                 //SkillNewStart(MiiInfo, MiiTgtInfo);
                 //return true;
-                return Orig(MiiInfo, SkillEnum::SKILL_SCIENTIST_CURE_CODE, param3, MiiTgtInfo);
-            break;
+                //return Orig(MiiInfo, SKILL_SCIENTIST_CURE_CODE, param3, MiiTgtInfo);
+            //break;
             default:
                 return Orig(MiiInfo, skillIdx, param3, MiiTgtInfo);
             break;
@@ -684,13 +686,85 @@ HOOK_DEFINE_TRAMPOLINE(SkillDisabler) {
     }
 };
 
+HOOK_DEFINE_TRAMPOLINE(CanSkillTgtAlly) {
+    static bool Callback(actorInfo* MiiInfo, SkillEnum SkillIdx, actorInfo* TgtInfo) {
+        switch (SkillIdx) {
+            case SKILL_SCIENTIST_09:
+                //return Orig(MiiInfo, SKILL_SCIENTIST_CURE_CODE, TgtInfo);
+            default:
+                return Orig(MiiInfo, SkillIdx, TgtInfo);
+        }
+    }
+};
+
+HOOK_DEFINE_TRAMPOLINE(CanTargetEnemy) {
+    static bool Callback(actorInfo *MiiInfo, SkillEnum SkillIdx, actorInfo* EnemyInfo) {
+        switch (SkillIdx) {
+            case SKILL_SCIENTIST_09:
+                return Orig(MiiInfo, SKILL_FIGHTER_DOUBLE, EnemyInfo);
+            default:
+                return Orig(MiiInfo, SkillIdx, EnemyInfo);
+        }
+    }
+};
+
+HOOK_DEFINE_TRAMPOLINE(IsNotAutoSkill) {
+    static bool Callback(actorInfo *MiiInfo, SkillEnum SkillIdx) {
+        //char buffer[100];
+
+        switch (SkillIdx) {
+            case SKILL_SCIENTIST_10:
+                return false;
+            default:
+                return Orig(MiiInfo, SkillIdx);
+        }
+    }
+};
+
+HOOK_DEFINE_TRAMPOLINE(SetSkillStatus) {
+    static SkillStatus Callback(actorInfo *MiiInfo, SkillEnum SkillIdx) {
+        switch (SkillIdx) {
+            case SKILL_SCIENTIST_09:
+                return SKILL_STATUS_ENABLE;
+            default:
+                return Orig(MiiInfo, SkillIdx);
+        }
+    }
+};
+
+HOOK_DEFINE_TRAMPOLINE(DamageSkills) {
+    static bool Callback(actorInfo *MiiInfo, SkillEnum SkillIdx, actorInfo* MiiInfo2, actorInfo* TgtInfo) {
+        //int iVar1;
+        //int iVar2;
+        //ulong uVar3;
+        uintptr_t HelperMiis;
+        uintptr_t auStack58 [36];
+        char buffer [100];
+
+        switch (SkillIdx) {
+            case SKILL_SCIENTIST_09:
+                LOG("DamageSkills Scientist09_");
+                HelperMiis = 0;
+                SomeInitFunc(&HelperMiis, 4, auStack58);
+                GetHelperMiis(MiiInfo, &HelperMiis, 0);
+                Scientist09_Start(MiiInfo, MiiInfo2, &HelperMiis);
+                //BugCrushStart(MiiInfo, MiiInfo2, &HelperMiis);
+                return true;
+                //return Orig(MiiInfo, SKILL_SCIENTIST_BUG_CRUSH, MiiInfo2, TgtInfo); 
+            break;
+            default:
+                return Orig(MiiInfo, SkillIdx, MiiInfo2, TgtInfo);
+        }
+    }
+};
+
 HOOK_DEFINE_TRAMPOLINE(DoesSkillTgtAlly_Hook) {
     static bool Callback(uintptr_t BattleInfo, SkillEnum SkillIdx) {
-        char buffer[100];
+        //char buffer[100];
         switch(SkillIdx){
             case SkillEnum::SKILL_SCIENTIST_09:
-                LOG("SKILL_SCIENTIST_09, targets ally.")
-                return true;
+                //LOG("SKILL_SCIENTIST_09, targets ally.")
+                return false;
             default:
                 return Orig(BattleInfo, SkillIdx);
         }
@@ -700,7 +774,7 @@ HOOK_DEFINE_TRAMPOLINE(DoesSkillTgtAlly_Hook) {
 HOOK_DEFINE_TRAMPOLINE(DoesSkillTgtEnemy_Hook) {
     static bool Callback(uintptr_t BattleInfo, SkillEnum SkillIdx) {
         switch(SkillIdx){
-            case SKILL_SCIENTIST_10:
+            case SKILL_SCIENTIST_09:
                 return true;
             default:
                 return Orig(BattleInfo, SkillIdx);
@@ -711,6 +785,8 @@ HOOK_DEFINE_TRAMPOLINE(DoesSkillTgtEnemy_Hook) {
 HOOK_DEFINE_TRAMPOLINE(DoesSkillTgtAllEnemy_Hook) {
     static bool Callback(uintptr_t BattleInfo, SkillEnum SkillIdx) {
         switch(SkillIdx){
+            case SKILL_SCIENTIST_09:
+                return false;
             default:
                 return Orig(BattleInfo, SkillIdx);
         }
@@ -817,7 +893,7 @@ HOOK_DEFINE_TRAMPOLINE(BasicAttackState) {
         }
 
         // Priest basic attacks restore MP
-        if (last_job == JobEnum::JOB_PRIEST) {
+        /*if (last_job == JobEnum::JOB_PRIEST) {
             LOG("Trying Priest new basic atk effect...");
 
             // Do and store math for MP to restore
@@ -828,7 +904,7 @@ HOOK_DEFINE_TRAMPOLINE(BasicAttackState) {
             PriestMPState = true;
 
             //DoMPHeal((uintptr_t)MiiInfo, 71554516732, (int)*(short *)(MiiInfo->field_1 + 0xf), 1);   // 71437483340
-        }
+        }*/
 
         // Mage new basic attack states
         //if (last_job == JobEnum::JOB_WIZARD){
@@ -838,7 +914,7 @@ HOOK_DEFINE_TRAMPOLINE(BasicAttackState) {
             if (puVar8 == 0x0) {
                 dmg_struct.AtkKind = 0x7100e0a12c;
                 dmg_struct.FinalDmgMod = (float)(*(short *)((TgtInfo + 0x8) + 0x78));
-                puVar8 = BattleStateFinalPlayer(MiiInfo->field_2, MiiInfo->field_1, 1, (long *)&dmg_struct, 0);
+                puVar8 = BattleStateFinalPlayer(MiiInfo->Actor_Idx, MiiInfo->field_1, 1, (long *)&dmg_struct, 0);
             }*/
             //plVar1 = (long *)FUN_71002ddec0(MiiInfo, 0xffffffff, 0);
 
@@ -893,12 +969,12 @@ HOOK_DEFINE_TRAMPOLINE(EventActionBool) {
 };
 
 HOOK_DEFINE_TRAMPOLINE(SetVisibleHPMP) {
-    static void Callback(long *param1, long param2, long ****param3) {
+    static void Callback(uintptr_t param1, uintptr_t param2, uintptr_t param3) {
         char buffer[100];
         LOG("SetVisibleHPMP Accessed (Event#: %d)", EventNum);
-        LOG("Param1: %ld", *param1); // Map Event: 150213912 // Non map: 150213912
+        LOG("Param1: %ld", param1); // Map Event: 150213912 // Non map: 150213912
         LOG("Param2: %ld", param2); // Map Event: 75345443312 // Non map: 75345442592
-        LOG("Param3: %ld", ****param3); // Map Event: 71675650792 // Non Map: 75345442320
+        LOG("Param3: %ld", param3); // Map Event: 71675650792 // Non Map: 75345442320
         
         return Orig(param1, param2, param3);
     }
@@ -907,10 +983,11 @@ HOOK_DEFINE_TRAMPOLINE(SetVisibleHPMP) {
 HOOK_DEFINE_INLINE(VisibleHPMPInline) {
     static void Callback(exl::hook::InlineCtx* ctx) {
         char buffer[100];
-        ctx->X[22] = 71562689040;
-        ctx->X[21] = *(long *)(ctx->X[22] + 0x388);
+        //ctx->X[22] = 71562689040;
+        //ctx->X[21] = *(long *)(ctx->X[22] + 0x388);
         LOG("lVar5: %ld", ctx->X[21]);
         LOG("lVar6: %ld", ctx->X[22]);
+        return;
     }
 };
 
@@ -938,8 +1015,8 @@ HOOK_DEFINE_TRAMPOLINE(ReduceMPAfterSkill) {
         int PartySize;
         int rnd = 0;
 
-        int PartyIdx = GetActorIdx(MiiInfo->field_2);
-        long *SomeVar1 = MiiInfo->field_2;
+        int PartyIdx = GetActorIdx(MiiInfo->Actor_Idx);
+        long *SomeVar1 = MiiInfo->Actor_Idx;
         // This probs isn't needed,
         // leftover from reference.
         if (0 < PartyIdx) {
@@ -962,8 +1039,8 @@ HOOK_DEFINE_TRAMPOLINE(ReduceMPAfterSkill) {
                 LOG("rnd# is %d", rnd);
             }
             PartyIdx += 1;
-            PartySize = GetActorIdx(MiiInfo->field_2);
-            SomeVar1 = MiiInfo->field_2;
+            PartySize = GetActorIdx(MiiInfo->Actor_Idx);
+            SomeVar1 = MiiInfo->Actor_Idx;
         } while (PartyIdx < PartySize);
 
         if ((Scientist != NULL) && (rnd <= 50)) {
@@ -981,28 +1058,7 @@ HOOK_DEFINE_TRAMPOLINE(ReduceMPAfterSkill) {
         }
     }
 };
-
-HOOK_DEFINE_TRAMPOLINE(SkillSwitch) {
-    static int Callback(actorInfo *MiiInfo, SkillEnum SkillIdx) {
-        switch (SkillIdx) {
-            case SKILL_SCIENTIST_09:
-                return 4;
-            default:
-                return Orig(MiiInfo, SkillIdx);
-        }
-    }
-};
-
-HOOK_DEFINE_TRAMPOLINE(ChangeEquipment) {
-    static void Callback(uintptr_t param_1, int param_2) {
-        char buffer[100];
-
-        LOG("Param 2: %d", param_2);
-
-        return Orig(param_1, param_2);
-    }
-};
-
+ 
 extern "C" void exl_main(void* x0, void* x1) {
     exl::hook::Initialize();
 
@@ -1026,7 +1082,7 @@ extern "C" void exl_main(void* x0, void* x1) {
     RockyPersonalCheck::InstallAtOffset(0x00279850);
     DmgConstructor1::InstallAtOffset(0x00269D60);
     //BasicAtk::InstallAtOffset(0x002EA6A0);
-    SkillDisabler::InstallAtOffset(0x00235580);
+    //SkillDisabler::InstallAtOffset(0x00235580);
     DoesSkillTgtAlly_Hook::InstallAtOffset(0x00278500);
     DoesSkillTgtEnemy_Hook::InstallAtOffset(0x00278430);
     DoesSkillTgtAllEnemy_Hook::InstallAtOffset(0x00278550);
@@ -1037,14 +1093,17 @@ extern "C" void exl_main(void* x0, void* x1) {
     //EventActionSetup::InstallAtOffset(0x00941920);
     //SetVisibleHPMP::InstallAtOffset(0x008efa20);
     //EventActionBool::InstallAtOffset(0x00944ff0);
-    //VisibleHPMPInline::InstallAtOffset(0x008efacc);
+    //VisibleHPMPInline::InstallAtOffset(0x008efecc);
     GetDmgOrHealAmount::InstallAtOffset(0x0026a010);
     HandleEnemyDamage_Hook::InstallAtOffset(0x0028b200);
     RockyBStateHandler::InstallAtOffset(0x002b2b50);
     //FPSTest::InstallAtOffset(0x00c03c60);
-    ReduceMPAfterSkill::InstallAtOffset(0x0027d4a0);
-    SkillSwitch::InstallAtOffset(0x00276f30);
-    ChangeEquipment::InstallAtOffset(0x00487750);
+    //ReduceMPAfterSkill::InstallAtOffset(0x0027d4a0);
+    IsNotAutoSkill::InstallAtOffset(0x00276ed0);
+    SetSkillStatus::InstallAtOffset(0x00276f30);
+    DamageSkills::InstallAtOffset(0x00292e30);
+    CanTargetEnemy::InstallAtOffset(0x00278480);
+    CanSkillTgtAlly::InstallAtOffset(0x00277950);
 }
 
 extern "C" NORETURN void exl_exception_entry() {

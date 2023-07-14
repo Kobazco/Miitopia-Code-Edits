@@ -1,3 +1,5 @@
+#pragma once
+
 #include <lib.hpp>
 #include <nn.hpp>
 #include <cstring>
@@ -6,13 +8,6 @@
 #include "func_ptrs.hpp"
 #include "sead/container/seadBuffer.h"
 #include "sead/prim/seadSafeString.hpp"
-
-#define LOG(...)                                                    \
-  {                                                                 \
-      int length = snprintf(buffer, sizeof(buffer), __VA_ARGS__);   \
-      svcOutputDebugString(buffer, length);                         \
-  }
-
 /* 
 Structures
 All structures here. Help.
@@ -371,6 +366,26 @@ enum EnemySkills1 : u64 {
     ENEMY_SKILL_1_SUPER_SATAN = 29,
     ENEMY_SKILL_1_LAST_MIMIT = 30,
     ENEMY_SKILL_1_CRASH_ATTACK = 31,
+};
+
+enum SkillStatus : u64 {
+    SKILL_STATUS_ENABLE = 0,
+    SKILL_STATUS_NO_NEED = 1, // Unused Skills
+    SKILL_STATUS_NO_MP = 2,
+    SKILL_STATUS_NO_WEAPON = 3,
+    SKILL_STATUS_NO_REVIVE = 4,
+    SKILL_STATUS_NO_EFFECT = 5,
+    SKILL_STATUS_NO_SLEEP = 6,
+    SKILL_STATUS_ALREADY_TRAP = 7,
+    SKILL_STATUS_FULL_ITEM = 8,
+    SKILL_STATUS_NO_ENCORE = 9,
+    SKILL_STATUS_NO_FUN = 10,
+    SKILL_STATUS_NO_EAT = 11,
+    SKILL_STATUS_NO_SHOT = 12,
+    SKILL_STATUS_NO_FRISK = 13,
+    SKILL_STATUS_NO_PICK = 14,
+    SKILL_STATUS_NO_SEDUCE = 15,
+    SKILL_STATUS_NO_TEA = 16,
 };
 
 /*
